@@ -1,0 +1,453 @@
+Screens:
+  QuyTacUngXu_Hub:
+    Properties:
+      Fill: =RGBA(248, 250, 252, 1)
+      LoadingSpinnerColor: =RGBA(56, 0, 209, 1)
+      OnVisible: |-
+        =// 1. Tải toàn bộ câu hỏi đang có trạng thái 'Hiện' từ backend SharePoint
+        ClearCollect(
+            colActiveQuestions,
+            Filter(
+                'APP CHẤM CÔNG - NGAN HANG CAU HOI',
+                TRANG_THAI.Value = "Hiện"
+            )
+        );
+
+        // 2. Tìm danh sách các chủ đề duy nhất đang có câu hỏi hoạt động
+        ClearCollect(
+            colActiveTopics,
+            Distinct(colActiveQuestions, CHUDE)
+        );
+
+        // 3. Tải lịch sử làm bài kiểm tra của nhân viên hiện tại
+        ClearCollect(
+            colUserExamHistory,
+            Filter(
+                'APP CHẤM CÔNG - KET QUA KIEM TRA',
+                MANHANVIEN = _userRecord.MSNV.Value
+            )
+        );
+
+        // 4. Kiểm tra trạng thái ký cam kết COC (Phụ lục 04)
+        UpdateContext({
+            varUserCocSigned: LookUp(
+                'APP CHẤM CÔNG - CAM KẾT TUÂN THỦ COC',
+                MANHANVIEN = _userRecord.MSNV.Value && PHIENBAN = "SZ-GOV-COC-01"
+            )
+        });
+
+        // 5. Tự động sinh danh sách các mục hiển thị trên Hub từ Backend
+        Clear(colHubCards);
+
+        // Thêm mục Ký Cam kết nếu chủ đề COC đang kích hoạt
+        If(
+            !IsEmpty(Filter(colActiveTopics, Value = "COC")),
+            Collect(
+                colHubCards,
+                {
+                    CardId: "COC_COMMIT",
+                    ChuDeCode: "COC",
+                    CardType: "COMMITMENT",
+                    Tag: "VĂN BẢN QUY CHẾ",
+                    TimeTag: "Phụ lục 04",
+                    Title: "1. Đọc & Ký Cam kết Tuân thủ COC",
+                    Desc: "Nghiên cứu 5 chương quy tắc ứng xử, các lằn ranh đỏ (Red Lines) và thực hiện ký cam kết điện tử theo QĐ 382/2026/QĐ-SEAZEN.",
+                    StatusText: If(!IsBlank(varUserCocSigned), "Đã ký cam kết", "Chưa ký cam kết"),
+                    StatusColor: If(!IsBlank(varUserCocSigned), RGBA(22, 101, 52, 1), RGBA(217, 119, 6, 1)),
+                                        ActionText: If(!IsBlank(varUserCocSigned), "Xem lại", "Đọc & Ký ngay"),
+                    ScreenTarget: "DOC_VA_KY"
+                }
+            )
+        );
+
+        // Tự động sinh thẻ bài kiểm tra cho từng chủ đề có câu hỏi trên SharePoint
+        ForAll(
+            colActiveTopics As _topic,
+            With(
+                {
+                    topicCode: _topic.Value,
+                    topicQuestions: Filter(colActiveQuestions, CHUDE = _topic.Value),
+                    userPassedAttempts: Filter(colUserExamHistory, CHUDE = _topic.Value && KETQUA = "ĐẠT"),
+                    userAllAttempts: Filter(colUserExamHistory, CHUDE = _topic.Value)
+                },
+                With(
+                    {
+                        firstQ: First(topicQuestions),
+                        qCount: CountRows(topicQuestions),
+                        userBestRecord: First(
+                            Sort(
+                                If(!IsEmpty(userPassedAttempts), userPassedAttempts, userAllAttempts),
+                                DIEMSO,
+                                SortOrder.Descending
+                            )
+                        ),
+                        hasPassed: !IsEmpty(userPassedAttempts),
+                        hasAttempted: !IsEmpty(userAllAttempts)
+                    },
+                    With(
+                        {
+                            passScore: Coalesce(firstQ.DIEM_DAT, 7),
+                            durationMin: Coalesce(firstQ.THOI_GIAN_PHUT, 15),
+                            topicTitle: Coalesce(firstQ.TEN_CHU_DE, "Bài Kiểm tra " & topicCode),
+                            topicDesc: Coalesce(firstQ.MO_TA_CHU_DE, "Trắc nghiệm nhận thức & tình huống chuyên môn theo quy định.")
+                        },
+                        Collect(
+                            colHubCards,
+                            {
+                                CardId: "EXAM_" & topicCode,
+                                ChuDeCode: topicCode,
+                                CardType: "EXAM",
+                                Tag: "KHẢO SÁT HIỂU BIẾT (" & topicCode & ")",
+                                TimeTag: qCount & " câu • " & durationMin & " phút",
+                                Title: If(topicCode = "COC", "2. " & topicTitle, topicTitle),
+                                Desc: topicDesc & " Chuẩn đạt từ " & passScore & "/" & qCount & " câu trở lên.",
+                                StatusText: If(
+                                    hasPassed,
+                                    "● Đã đạt: " & userBestRecord.DIEMSO & "/" & qCount & " điểm",
+                                    If(hasAttempted, "● Chưa đạt (" & userBestRecord.DIEMSO & "/" & qCount & ") - Làm lại", "● Chưa làm bài")
+                                ),
+                                StatusColor: If(
+                                    hasPassed,
+                                    RGBA(22, 101, 52, 1),
+                                    If(hasAttempted, RGBA(225, 29, 72, 1), RGBA(217, 119, 6, 1))
+                                ),
+                                ActionText: If(hasPassed, "Xem lại", If(hasAttempted, "Làm lại ngay", "Làm bài ngay")),
+                                ScreenTarget: "KIEM_TRA"
+                            }
+                        )
+                    )
+                )
+            )
+        )
+    Children:
+      # --- TOP BAR ---
+      - RectTopBar_Hub:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(56, 0, 209, 1)
+            Height: =85
+            Width: =Parent.Width
+
+      # --- SVG BACK BUTTON (NO TEXT '<') ---
+      - ImgBack_Hub:
+          Control: Image@2.1.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =32
+            Image: |
+              ="data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='15 18 9 12 15 6'></polyline></svg>")
+            OnSelect: =Navigate(TrangChu, ScreenTransition.Fade)
+            Width: =32
+            X: =20
+            Y: =26
+
+      - BtnBackOverlay_Hub:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledColor: =RGBA(255, 255, 255, 0.5)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            Height: =50
+            HoverColor: =RGBA(255, 255, 255, 1)
+            HoverFill: =RGBA(255, 255, 255, 0.15)
+            OnSelect: =Navigate(TrangChu, ScreenTransition.Fade)
+            PressedColor: =RGBA(255, 255, 255, 1)
+            PressedFill: =RGBA(255, 255, 255, 0.25)
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Text: =""
+            Width: =50
+            X: =11
+            Y: =17
+
+      - LblTopTitle_Hub:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(255, 255, 255, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            Size: =16
+            Text: ="TRUNG TÂM QUY TẮC & ĐÀO TẠO"
+            Width: =480
+            X: =70
+            Y: =17
+
+      # --- SEARCH BAR WITH SVG MAGNIFIER ---
+      - CardSearch_Bg_Hub:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 232, 240, 1)
+            BorderThickness: =1.5
+            Color: =RGBA(15, 23, 42, 1)
+            DisabledBorderColor: =RGBA(226, 232, 240, 1)
+            DisabledFill: =RGBA(255, 255, 255, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =48
+            HoverColor: =RGBA(15, 23, 42, 1)
+            HoverFill: =RGBA(255, 255, 255, 1)
+            PressedColor: =RGBA(15, 23, 42, 1)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Text: =""
+            Width: =580
+            X: =30
+            Y: =100
+
+      - ImgSearchIcon_Hub:
+          Control: Image@2.1.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =20
+            Image: |
+              ="data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'></circle><line x1='21' y1='21' x2='16.65' y2='16.65'></line></svg>")
+            Width: =20
+            X: =46
+            Y: =114
+
+      - TxtSearch_Hub:
+          Control: Classic/TextInput@2.3.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            Color: =RGBA(15, 23, 42, 1)
+            Default: =""
+            Fill: =RGBA(0, 0, 0, 0)
+            Font: =Font.'Segoe UI'
+            Height: =40
+            HintText: ="Tìm kiếm bài khảo sát, quy chế, cam kết..."
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(15, 23, 42, 1)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            PaddingLeft: =6
+            Size: =12
+            Width: =520
+            X: =76
+            Y: =104
+
+      # --- GALLERY CÁC MỤC HUB TỰ ĐỘNG THEO BACKEND VÀ TÌM KIẾM ---
+      - GalleryHubItems:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =680
+            Items: |-
+              =Filter(
+                  colHubCards,
+                  IsBlank(TxtSearch_Hub.Text) ||
+                  TxtSearch_Hub.Text in Title ||
+                  TxtSearch_Hub.Text in Desc ||
+                  TxtSearch_Hub.Text in Tag
+              )
+            ShowScrollbar: =false
+            TemplatePadding: =8
+            TemplateSize: =192
+            Width: =580
+            X: =30
+            Y: =160
+          Children:
+            - CardItem_Bg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(226, 232, 240, 1)
+                  BorderThickness: =1.2
+                  Color: =RGBA(31, 41, 55, 1)
+                  DisabledBorderColor: =RGBA(226, 232, 240, 1)
+                  DisabledFill: =RGBA(255, 255, 255, 1)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =RGBA(255, 255, 255, 1)
+                  Height: =176
+                  HoverColor: =RGBA(31, 41, 55, 1)
+                  HoverFill: =RGBA(255, 255, 255, 1)
+                  PressedColor: =RGBA(31, 41, 55, 1)
+                  PressedFill: =RGBA(255, 255, 255, 1)
+                  RadiusBottomLeft: =14
+                  RadiusBottomRight: =14
+                  RadiusTopLeft: =14
+                  RadiusTopRight: =14
+                  Text: =""
+                  Width: =580
+                  X: =0
+                  Y: =0
+
+            - ImgItem_TagIcon:
+                Control: Image@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Height: =16
+                  Image: |
+                    ="data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232563EB' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'></path><polyline points='14 2 14 8 20 8'></polyline><line x1='16' y1='13' x2='8' y2='13'></line><line x1='16' y1='17' x2='8' y2='17'></line><line x1='10' y1='9' x2='8' y2='9'></line></svg>")
+                  Width: =16
+                  X: =18
+                  Y: =15
+
+            - LblItem_Tag:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(37, 99, 235, 1)
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =20
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Size: =10.5
+                  Text: =Upper(Coalesce(ThisItem.Tag, "VĂN BẢN QUY CHẾ"))
+                  Width: =320
+                  X: =38
+                  Y: =13
+
+            - LblItem_TimeTag:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(100, 116, 139, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =20
+                  Size: =10.5
+                  Text: =Coalesce(ThisItem.TimeTag, "")
+                  Width: =180
+                  X: =380
+                  Y: =13
+
+            - LblItem_Title:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(15, 23, 42, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =26
+                  Size: =13.5
+                  Text: =Coalesce(ThisItem.Title, "Bài kiểm tra quy tắc")
+                  Width: =544
+                  X: =18
+                  Y: =38
+
+            - LblItem_Desc:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(71, 85, 105, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =44
+                  LineHeight: =1.35
+                  Overflow: =Overflow.Hidden
+                  Size: =10.5
+                  Text: =Coalesce(ThisItem.Desc, "")
+                  Width: =544
+                  X: =18
+                  Y: =66
+
+            - RectItem_Divider:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Fill: =RGBA(241, 245, 249, 1)
+                  Height: =1
+                  Width: =544
+                  X: =18
+                  Y: =118
+
+            - ImgItem_StatusDot:
+                Control: Image@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Height: =16
+                  Image: |-
+                    ="data:image/svg+xml;utf8," & EncodeUrl(
+                        "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>" &
+                        "<circle cx='8' cy='8' r='6.5' fill='" &
+                        If(
+                            ThisItem.StatusColor = RGBA(22, 101, 52, 1),
+                            "%23DCFCE7",
+                            ThisItem.StatusColor = RGBA(225, 29, 72, 1),
+                            "%23FFE4E6",
+                            "%23FEF3C7"
+                        ) & "'/>" &
+                        "<circle cx='8' cy='8' r='3.5' fill='" &
+                        If(
+                            ThisItem.StatusColor = RGBA(22, 101, 52, 1),
+                            "%2316A34A",
+                            ThisItem.StatusColor = RGBA(225, 29, 72, 1),
+                            "%23E11D48",
+                            "%23D97706"
+                        ) & "'/>" &
+                        "</svg>"
+                    )
+                  Width: =16
+                  X: =18
+                  Y: =136
+
+            - LblItem_Status:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: |-
+                    =If(
+                        ThisItem.StatusColor = RGBA(22, 101, 52, 1),
+                        RGBA(22, 101, 52, 1),
+                        ThisItem.StatusColor = RGBA(225, 29, 72, 1),
+                        RGBA(225, 29, 72, 1),
+                        RGBA(217, 119, 6, 1)
+                    )
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =24
+                  PaddingLeft: =0
+                  Size: =11
+                  Text: =Coalesce(ThisItem.StatusText, "Chưa làm bài")
+                  Width: =360
+                  X: =38
+                  Y: =132
+
+            - BtnItem_Action:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Align: =Align.Center
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  DisabledColor: =RGBA(255, 255, 255, 1)
+                  DisabledFill: =RGBA(191, 219, 254, 1)
+                  Fill: =RGBA(37, 99, 235, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =34
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(255, 255, 255, 1)
+                  HoverFill: =RGBA(29, 78, 216, 1)
+                  OnSelect: |-
+                    =If(
+                        ThisItem.ScreenTarget = "DOC_VA_KY",
+                        Navigate(QuyTacUngXu_DocVaKy, ScreenTransition.Fade),
+                        Set(varSelectedChuDe, ThisItem.ChuDeCode); Navigate(QuyTacUngXu_KiemTra, ScreenTransition.Fade)
+                    )
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedColor: =RGBA(255, 255, 255, 1)
+                  PressedFill: =RGBA(30, 64, 175, 1)
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  Size: =11.5
+                  Text: =Coalesce(ThisItem.ActionText, "Làm bài ngay")
+                  Width: =130
+                  X: =432
+                  Y: =128

@@ -1,0 +1,952 @@
+Screens:
+  QuyTacUngXu_KiemTra:
+    Properties:
+      Fill: =RGBA(248, 250, 252, 1)
+      LoadingSpinnerColor: =RGBA(56, 0, 209, 1)
+      OnVisible: |-
+        =// 1. Xác định chủ đề cần làm bài (mặc định 'COC')
+        UpdateContext({
+            locActiveTopic: Coalesce(varSelectedChuDe, "COC")
+        });
+
+        // 2. Tải toàn bộ câu hỏi đang có trạng thái 'Hiện' của chủ đề từ SharePoint
+        ClearCollect(
+            colRawQuestions,
+            Sort(
+                Filter(
+                    'APP CHẤM CÔNG - NGAN HANG CAU HOI',
+                    CHUDE = locActiveTopic && TRANG_THAI.Value = "Hiện"
+                ),
+                THU_TU,
+                SortOrder.Ascending
+            )
+        );
+
+        // 3. Nếu không tải được câu hỏi -> Dừng và quay về Hub ngay lập tức
+        If(
+            IsEmpty(colRawQuestions),
+            Notify("Không có câu hỏi nào đang được kích hoạt cho chủ đề này.", NotificationType.Warning);
+            Navigate(QuyTacUngXu_Hub, ScreenTransition.Fade)
+        );
+
+        // 4. Chuẩn hóa dữ liệu sang bộ nhớ phiên làm bài (colQuizSession)
+        ClearCollect(
+            colQuizSession,
+            ForAll(
+                colRawQuestions,
+                {
+                    id: Title,
+                    chuDe: CHUDE,
+                    tenChuDe: Coalesce(TEN_CHU_DE, "BÀI KIỂM TRA " & CHUDE),
+                    question: NOI_DUNG_CAU_HOI,
+                    optA: DAPAN_A,
+                    optB: DAPAN_B,
+                    optC: DAPAN_C,
+                    optD: DAPAN_D,
+                    correct: DAPAN_DUNG,
+                    required: Coalesce(CAU_BAT_BUOC, false),
+                    risk: Coalesce(MUC_DO_RUI_RO, "Tiêu chuẩn"),
+                    group: Coalesce(NHOM_CAU_HOI, "Tình huống"),
+                    explanation: Coalesce(GIAI_THICH, ""),
+                    basis: Coalesce(CAN_CU, ""),
+                    sortOrder: Coalesce(THU_TU, 1),
+                    totalQuestions: CountRows(colRawQuestions),
+                    durationMinutes: Coalesce(THOI_GIAN_PHUT, 15),
+                    passScore: Coalesce(DIEM_DAT, 7)
+                }
+            )
+        );
+
+        // 5. Khởi tạo trạng thái phiên làm bài (Không tính giờ)
+        Clear(colUserAnswers);
+        UpdateContext({
+            locCurrentQIndex: 1,
+            locQuizTotalCount: CountRows(colQuizSession),
+            locQuizCompleted: false,
+            locQuizScore: 0,
+            locQuizPassed: false,
+            locMandatoryPassed: true,
+            locSubmitting: false
+        })
+    Children:
+      # --- TOP BAR (WHITE EDITORIAL STYLE) ---
+      - RectTopBar_Quiz:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(226, 232, 240, 1)
+            BorderThickness: =1
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =75
+            Width: =Parent.Width
+
+      # --- SVG BACK BUTTON (NO TEXT '<') ---
+      - ImgBack_Quiz:
+          Control: Image@2.1.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =24
+            Image: |
+              ="data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%233800D1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='15 18 9 12 15 6'></polyline></svg>")
+            OnSelect: =Navigate(QuyTacUngXu_Hub, ScreenTransition.Fade)
+            Width: =24
+            X: =20
+            Y: =26
+
+      - BtnBackOverlay_Quiz:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(0, 0, 0, 0)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            Height: =46
+            HoverColor: =RGBA(0, 0, 0, 0)
+            HoverFill: =RGBA(56, 0, 209, 0.08)
+            OnSelect: =Navigate(QuyTacUngXu_Hub, ScreenTransition.Fade)
+            PressedColor: =RGBA(0, 0, 0, 0)
+            PressedFill: =RGBA(56, 0, 209, 0.15)
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Text: =""
+            Width: =46
+            X: =9
+            Y: =15
+
+      - LblTopTitle_Quiz:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Left
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(56, 0, 209, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            Size: =15
+            Text: =Coalesce(First(colQuizSession).tenChuDe, "BÀI KIỂM TRA HIỂU BIẾT")
+            Width: =500
+            X: =65
+            Y: =13
+
+      # --- PURPLE TOP ACCENT BAR ---
+      - RectAccentBar_Quiz:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(126, 58, 242, 1)
+            Height: =4
+            Width: =Parent.Width
+            X: =0
+            Y: =74
+
+      # --- QUESTION PROGRESS COUNTER & GROUP ---
+      - LblQProgressText:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(126, 58, 242, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Size: =12
+            Text: |
+              ="CÂU " & Text(locCurrentQIndex, "00") & " / " & Text(locQuizTotalCount, "00") & " • " & Upper(Index(colQuizSession, locCurrentQIndex).group)
+            Width: =360
+            X: =30
+            Y: =95
+
+      - LblQRiskBadge:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: |-
+              =If(
+                  Index(colQuizSession, locCurrentQIndex).required,
+                  RGBA(225, 29, 72, 1),
+                  RGBA(100, 116, 139, 1)
+              )
+            Fill: |-
+              =If(
+                  Index(colQuizSession, locCurrentQIndex).required,
+                  RGBA(254, 242, 242, 1),
+                  RGBA(241, 245, 249, 1)
+              )
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            PaddingLeft: =8
+            PaddingRight: =8
+            Size: =11
+            Text: |-
+              =If(
+                  Index(colQuizSession, locCurrentQIndex).required,
+                  "LẰN RANH ĐỎ (BẮT BUỘC ĐÚNG)",
+                  "TIÊU CHUẨN"
+              )
+            Width: =220
+            X: =390
+            Y: =95
+
+      # --- QUESTION HEADLINE ---
+      - LblQHeadline:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(15, 23, 42, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =90
+            LineHeight: =1.4
+            Size: =15.5
+            Text: =Index(colQuizSession, locCurrentQIndex).question
+            Width: =580
+            X: =30
+            Y: =128
+
+      # --- OPTION A (CARD + RADIO ICON) ---
+      - BtnOptA_Card:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderColor: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "A",
+                  RGBA(126, 58, 242, 1),
+                  RGBA(226, 232, 240, 1)
+              )
+            BorderThickness: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "A",
+                  2,
+                  1.5
+              )
+            Color: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "A",
+                  RGBA(46, 16, 101, 1),
+                  RGBA(15, 23, 42, 1)
+              )
+            DisabledBorderColor: =RGBA(241, 245, 249, 1)
+            DisabledColor: =RGBA(148, 163, 184, 1)
+            DisabledFill: =RGBA(248, 250, 252, 1)
+            Fill: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "A",
+                  RGBA(243, 238, 255, 1),
+                  RGBA(255, 255, 255, 1)
+              )
+            Font: =Font.'Segoe UI'
+            FontWeight: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "A",
+                  FontWeight.Bold,
+                  FontWeight.Semibold
+              )
+            Height: =68
+            HoverBorderColor: =RGBA(196, 181, 253, 1)
+            HoverColor: =RGBA(15, 23, 42, 1)
+            HoverFill: =RGBA(250, 248, 255, 1)
+            OnSelect: |-
+              =With(
+                  {
+                      currentQ: Index(colQuizSession, locCurrentQIndex)
+                  },
+                  RemoveIf(colUserAnswers, QuestionId = currentQ.id);
+                  Collect(
+                      colUserAnswers,
+                      {
+                          QuestionId: currentQ.id,
+                          SelectedKey: "A",
+                          IsCorrect: (currentQ.correct = "A"),
+                          IsRequired: currentQ.required
+                      }
+                  )
+              )
+            PaddingLeft: =18
+            PaddingRight: =50
+            PressedBorderColor: =RGBA(126, 58, 242, 1)
+            PressedColor: =RGBA(46, 16, 101, 1)
+            PressedFill: =RGBA(237, 233, 254, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =13
+            Text: ="A.  " & Index(colQuizSession, locCurrentQIndex).optA
+            Width: =580
+            X: =30
+            Y: =230
+
+      - ImgOptA_Radio:
+          Control: Image@2.1.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =24
+            Image: |
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "A",
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%237E3AF2'><circle cx='12' cy='12' r='10'></circle><polyline points='16 9 10.5 14.5 8 12' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'></polyline></svg>"),
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2'><circle cx='12' cy='12' r='9'></circle></svg>")
+              )
+            Width: =24
+            X: =566
+            Y: =252
+
+      # --- OPTION B (CARD + RADIO ICON) ---
+      - BtnOptB_Card:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderColor: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "B",
+                  RGBA(126, 58, 242, 1),
+                  RGBA(226, 232, 240, 1)
+              )
+            BorderThickness: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "B",
+                  2,
+                  1.5
+              )
+            Color: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "B",
+                  RGBA(46, 16, 101, 1),
+                  RGBA(15, 23, 42, 1)
+              )
+            DisabledBorderColor: =RGBA(241, 245, 249, 1)
+            DisabledColor: =RGBA(148, 163, 184, 1)
+            DisabledFill: =RGBA(248, 250, 252, 1)
+            Fill: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "B",
+                  RGBA(243, 238, 255, 1),
+                  RGBA(255, 255, 255, 1)
+              )
+            Font: =Font.'Segoe UI'
+            FontWeight: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "B",
+                  FontWeight.Bold,
+                  FontWeight.Semibold
+              )
+            Height: =68
+            HoverBorderColor: =RGBA(196, 181, 253, 1)
+            HoverColor: =RGBA(15, 23, 42, 1)
+            HoverFill: =RGBA(250, 248, 255, 1)
+            OnSelect: |-
+              =With(
+                  {
+                      currentQ: Index(colQuizSession, locCurrentQIndex)
+                  },
+                  RemoveIf(colUserAnswers, QuestionId = currentQ.id);
+                  Collect(
+                      colUserAnswers,
+                      {
+                          QuestionId: currentQ.id,
+                          SelectedKey: "B",
+                          IsCorrect: (currentQ.correct = "B"),
+                          IsRequired: currentQ.required
+                      }
+                  )
+              )
+            PaddingLeft: =18
+            PaddingRight: =50
+            PressedBorderColor: =RGBA(126, 58, 242, 1)
+            PressedColor: =RGBA(46, 16, 101, 1)
+            PressedFill: =RGBA(237, 233, 254, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =13
+            Text: ="B.  " & Index(colQuizSession, locCurrentQIndex).optB
+            Width: =580
+            X: =30
+            Y: =310
+
+      - ImgOptB_Radio:
+          Control: Image@2.1.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =24
+            Image: |
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "B",
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%237E3AF2'><circle cx='12' cy='12' r='10'></circle><polyline points='16 9 10.5 14.5 8 12' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'></polyline></svg>"),
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2'><circle cx='12' cy='12' r='9'></circle></svg>")
+              )
+            Width: =24
+            X: =566
+            Y: =332
+
+      # --- OPTION C (CARD + RADIO ICON) ---
+      - BtnOptC_Card:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderColor: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "C",
+                  RGBA(126, 58, 242, 1),
+                  RGBA(226, 232, 240, 1)
+              )
+            BorderThickness: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "C",
+                  2,
+                  1.5
+              )
+            Color: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "C",
+                  RGBA(46, 16, 101, 1),
+                  RGBA(15, 23, 42, 1)
+              )
+            DisabledBorderColor: =RGBA(241, 245, 249, 1)
+            DisabledColor: =RGBA(148, 163, 184, 1)
+            DisabledFill: =RGBA(248, 250, 252, 1)
+            Fill: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "C",
+                  RGBA(243, 238, 255, 1),
+                  RGBA(255, 255, 255, 1)
+              )
+            Font: =Font.'Segoe UI'
+            FontWeight: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "C",
+                  FontWeight.Bold,
+                  FontWeight.Semibold
+              )
+            Height: =68
+            HoverBorderColor: =RGBA(196, 181, 253, 1)
+            HoverColor: =RGBA(15, 23, 42, 1)
+            HoverFill: =RGBA(250, 248, 255, 1)
+            OnSelect: |-
+              =With(
+                  {
+                      currentQ: Index(colQuizSession, locCurrentQIndex)
+                  },
+                  RemoveIf(colUserAnswers, QuestionId = currentQ.id);
+                  Collect(
+                      colUserAnswers,
+                      {
+                          QuestionId: currentQ.id,
+                          SelectedKey: "C",
+                          IsCorrect: (currentQ.correct = "C"),
+                          IsRequired: currentQ.required
+                      }
+                  )
+              )
+            PaddingLeft: =18
+            PaddingRight: =50
+            PressedBorderColor: =RGBA(126, 58, 242, 1)
+            PressedColor: =RGBA(46, 16, 101, 1)
+            PressedFill: =RGBA(237, 233, 254, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =13
+            Text: ="C.  " & Index(colQuizSession, locCurrentQIndex).optC
+            Width: =580
+            X: =30
+            Y: =390
+
+      - ImgOptC_Radio:
+          Control: Image@2.1.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =24
+            Image: |
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "C",
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%237E3AF2'><circle cx='12' cy='12' r='10'></circle><polyline points='16 9 10.5 14.5 8 12' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'></polyline></svg>"),
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2'><circle cx='12' cy='12' r='9'></circle></svg>")
+              )
+            Width: =24
+            X: =566
+            Y: =412
+
+      # --- OPTION D (CARD + RADIO ICON) ---
+      - BtnOptD_Card:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderColor: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "D",
+                  RGBA(126, 58, 242, 1),
+                  RGBA(226, 232, 240, 1)
+              )
+            BorderThickness: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "D",
+                  2,
+                  1.5
+              )
+            Color: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "D",
+                  RGBA(46, 16, 101, 1),
+                  RGBA(15, 23, 42, 1)
+              )
+            DisabledBorderColor: =RGBA(241, 245, 249, 1)
+            DisabledColor: =RGBA(148, 163, 184, 1)
+            DisabledFill: =RGBA(248, 250, 252, 1)
+            Fill: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "D",
+                  RGBA(243, 238, 255, 1),
+                  RGBA(255, 255, 255, 1)
+              )
+            Font: =Font.'Segoe UI'
+            FontWeight: |-
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "D",
+                  FontWeight.Bold,
+                  FontWeight.Semibold
+              )
+            Height: =68
+            HoverBorderColor: =RGBA(196, 181, 253, 1)
+            HoverColor: =RGBA(15, 23, 42, 1)
+            HoverFill: =RGBA(250, 248, 255, 1)
+            OnSelect: |-
+              =With(
+                  {
+                      currentQ: Index(colQuizSession, locCurrentQIndex)
+                  },
+                  RemoveIf(colUserAnswers, QuestionId = currentQ.id);
+                  Collect(
+                      colUserAnswers,
+                      {
+                          QuestionId: currentQ.id,
+                          SelectedKey: "D",
+                          IsCorrect: (currentQ.correct = "D"),
+                          IsRequired: currentQ.required
+                      }
+                  )
+              )
+            PaddingLeft: =18
+            PaddingRight: =50
+            PressedBorderColor: =RGBA(126, 58, 242, 1)
+            PressedColor: =RGBA(46, 16, 101, 1)
+            PressedFill: =RGBA(237, 233, 254, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =13
+            Text: ="D.  " & Index(colQuizSession, locCurrentQIndex).optD
+            Width: =580
+            X: =30
+            Y: =470
+
+      - ImgOptD_Radio:
+          Control: Image@2.1.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Height: =24
+            Image: |
+              =If(
+                  LookUp(colUserAnswers, QuestionId = Index(colQuizSession, locCurrentQIndex).id).SelectedKey = "D",
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%237E3AF2'><circle cx='12' cy='12' r='10'></circle><polyline points='16 9 10.5 14.5 8 12' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'></polyline></svg>"),
+                  "data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23CBD5E1' stroke-width='2'><circle cx='12' cy='12' r='9'></circle></svg>")
+              )
+            Width: =24
+            X: =566
+            Y: =492
+
+      # --- BOTTOM ACTION BAR (MATCHING IMAGE 5) ---
+      - BtnPrevQ_Quiz:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 232, 240, 1)
+            BorderThickness: =1.5
+            Color: =RGBA(71, 85, 105, 1)
+            DisabledBorderColor: =RGBA(241, 245, 249, 1)
+            DisabledColor: =RGBA(203, 213, 225, 1)
+            DisabledFill: =RGBA(248, 250, 252, 1)
+            DisplayMode: =If(locCurrentQIndex > 1, DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =RGBA(255, 255, 255, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            HoverBorderColor: =RGBA(126, 58, 242, 1)
+            HoverColor: =RGBA(126, 58, 242, 1)
+            HoverFill: =RGBA(250, 248, 255, 1)
+            OnSelect: |-
+              =UpdateContext({ locCurrentQIndex: Max(1, locCurrentQIndex - 1) })
+            PressedBorderColor: =RGBA(126, 58, 242, 1)
+            PressedColor: =RGBA(46, 16, 101, 1)
+            PressedFill: =RGBA(237, 233, 254, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =13
+            Text: ="< Câu trước"
+            Width: =160
+            X: =30
+            Y: =560
+
+      - BtnNextQ_Quiz:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledColor: =RGBA(255, 255, 255, 0.4)
+            DisabledFill: =RGBA(15, 23, 42, 0.3)
+            Fill: =RGBA(15, 23, 42, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            HoverColor: =RGBA(255, 255, 255, 1)
+            HoverFill: =RGBA(56, 0, 209, 1)
+            OnSelect: |-
+              =If(
+                  locCurrentQIndex < locQuizTotalCount,
+                  UpdateContext({ locCurrentQIndex: locCurrentQIndex + 1 }),
+                  Select(BtnSubmitFinal_Quiz)
+              )
+            PressedColor: =RGBA(255, 255, 255, 1)
+            PressedFill: =RGBA(39, 0, 148, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =13
+            Text: |-
+              =If(locCurrentQIndex < locQuizTotalCount, "Câu tiếp theo >", "Nộp bài (" & CountRows(colUserAnswers) & "/" & locQuizTotalCount & ")")
+            Width: =400
+            X: =210
+            Y: =560
+
+      # Hidden final submit button triggered on last question
+      - BtnSubmitFinal_Quiz:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Height: =0
+            OnSelect: |-
+              =UpdateContext({
+                  locQuizScore: CountRows(Filter(colUserAnswers, IsCorrect = true)),
+                  locMandatoryFailedCount: CountRows(Filter(colUserAnswers, IsRequired = true && IsCorrect = false))
+              });
+              UpdateContext({
+                  locQuizPassed: (locQuizScore >= First(colQuizSession).passScore) && (locMandatoryFailedCount = 0),
+                  locQuizCompleted: true
+              });
+              Patch(
+                  'APP CHẤM CÔNG - KET QUA KIEM TRA',
+                  Defaults('APP CHẤM CÔNG - KET QUA KIEM TRA'),
+                  {
+                      Title: "KT-" & locActiveTopic & "-" & _userRecord.MSNV.Value & "-" & Text(Now(), "yyyymmddhhmmss"),
+                      CHUDE: locActiveTopic,
+                      MANHANVIEN: _userRecord.MSNV.Value,
+                      HOVATEN: _userRecord.HOTEN.Value,
+                      DONVI_MUCTIEU: Coalesce(_userRecord.MUCTIEU.Value, "Hội đồng Điều hành"),
+                      NGAYNOP: Now(),
+                      DIEMSO: locQuizScore,
+                      SO_CAU_BAT_BUOC_DUNG: CountRows(Filter(colUserAnswers, IsRequired = true && IsCorrect = true)),
+                      KETQUA: If((locQuizScore >= First(colQuizSession).passScore) && (locMandatoryFailedCount = 0), "ĐẠT", "KHÔNG ĐẠT"),
+                      THOI_GIAN_LAM_GIAY: 0,
+                      CHI_TIET_DAP_AN: JSON(colUserAnswers)
+                  }
+              )
+            Visible: =false
+            Width: =0
+            X: =0
+            Y: =0
+
+      # --- RESULT REVIEW MODAL (AFTER SUBMISSION) ---
+      - CardResultModal_Bg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(226, 232, 240, 1)
+            BorderThickness: =1
+            Color: =RGBA(15, 23, 42, 1)
+            DisabledBorderColor: =RGBA(226, 232, 240, 1)
+            DisabledFill: =RGBA(255, 255, 255, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =820
+            HoverColor: =RGBA(15, 23, 42, 1)
+            HoverFill: =RGBA(255, 255, 255, 1)
+            PressedColor: =RGBA(15, 23, 42, 1)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            RadiusBottomLeft: =24
+            RadiusBottomRight: =24
+            RadiusTopLeft: =24
+            RadiusTopRight: =24
+            Text: =""
+            Visible: =locQuizCompleted
+            Width: =580
+            X: =30
+            Y: =90
+
+      - LblResultHeader:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(56, 0, 209, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =36
+            Size: =16
+            Text: ="KẾT QUẢ KIỂM TRA HIỂU BIẾT"
+            Visible: =locQuizCompleted
+            Width: =540
+            X: =50
+            Y: =110
+
+      - LblResultScoreBig:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(15, 23, 42, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =60
+            Size: =38
+            Text: =locQuizScore & " / " & locQuizTotalCount
+            Visible: =locQuizCompleted
+            Width: =540
+            X: =50
+            Y: =145
+
+      - BtnResultStatusBadge:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            Color: |-
+              =If(locQuizPassed, RGBA(22, 101, 52, 1), RGBA(225, 29, 72, 1))
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: |-
+              =If(locQuizPassed, RGBA(22, 101, 52, 1), RGBA(225, 29, 72, 1))
+            DisabledFill: |-
+              =If(locQuizPassed, RGBA(220, 252, 231, 1), RGBA(255, 228, 230, 1))
+            DisplayMode: =DisplayMode.View
+            Fill: |-
+              =If(locQuizPassed, RGBA(220, 252, 231, 1), RGBA(255, 228, 230, 1))
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =36
+            HoverColor: |-
+              =If(locQuizPassed, RGBA(22, 101, 52, 1), RGBA(225, 29, 72, 1))
+            HoverFill: |-
+              =If(locQuizPassed, RGBA(220, 252, 231, 1), RGBA(255, 228, 230, 1))
+            PressedColor: |-
+              =If(locQuizPassed, RGBA(22, 101, 52, 1), RGBA(225, 29, 72, 1))
+            PressedFill: |-
+              =If(locQuizPassed, RGBA(220, 252, 231, 1), RGBA(255, 228, 230, 1))
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =13
+            Text: |-
+              =If(
+                  locQuizPassed,
+                  "CHÚC MỪNG! ĐÃ ĐẠT CHUẨN ĐÀO TẠO",
+                  "CHƯA ĐẠT - CẦN ÔN TẬP VÀ LÀM LẠI"
+              )
+            Visible: =locQuizCompleted
+            Width: =360
+            X: =140
+            Y: =210
+
+      - LblResultExplanationNotice:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(100, 116, 139, 1)
+            Font: =Font.'Segoe UI'
+            Height: =36
+            LineHeight: =1.3
+            Size: =11
+            Text: |-
+              =If(
+                  locQuizPassed,
+                  "Kết quả đã được tự động lưu vào hồ sơ nhân sự trên hệ thống.",
+                  "Điều kiện đạt: Từ " & First(colQuizSession).passScore & "/" & locQuizTotalCount & " điểm trở lên và không sai bất kỳ câu Lằn ranh đỏ nào."
+              )
+            Visible: =locQuizCompleted
+            Width: =540
+            X: =50
+            Y: =250
+
+      # --- REVIEW GALLERY IN RESULTS ---
+      - GalleryResultReview:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =RGBA(241, 245, 249, 1)
+            BorderThickness: =1
+            Height: =460
+            Items: =colQuizSession
+            ShowScrollbar: =true
+            TemplatePadding: =6
+            TemplateSize: =120
+            Visible: =locQuizCompleted
+            Width: =540
+            X: =50
+            Y: =290
+          Children:
+            - CardReviewItem_Bg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: |-
+                    =If(
+                        LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey = ThisItem.correct,
+                        RGBA(34, 197, 94, 1),
+                        RGBA(239, 68, 68, 1)
+                    )
+                  BorderThickness: =1.5
+                  Color: =RGBA(15, 23, 42, 1)
+                  DisabledBorderColor: |-
+                    =If(
+                        LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey = ThisItem.correct,
+                        RGBA(34, 197, 94, 1),
+                        RGBA(239, 68, 68, 1)
+                    )
+                  DisabledFill: |-
+                    =If(
+                        LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey = ThisItem.correct,
+                        RGBA(240, 253, 244, 0.5),
+                        RGBA(254, 242, 242, 0.5)
+                    )
+                  DisplayMode: =DisplayMode.View
+                  Fill: |-
+                    =If(
+                        LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey = ThisItem.correct,
+                        RGBA(240, 253, 244, 0.5),
+                        RGBA(254, 242, 242, 0.5)
+                    )
+                  Height: =112
+                  HoverColor: =RGBA(15, 23, 42, 1)
+                  HoverFill: |-
+                    =If(
+                        LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey = ThisItem.correct,
+                        RGBA(240, 253, 244, 0.5),
+                        RGBA(254, 242, 242, 0.5)
+                    )
+                  PressedColor: =RGBA(15, 23, 42, 1)
+                  PressedFill: |-
+                    =If(
+                        LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey = ThisItem.correct,
+                        RGBA(240, 253, 244, 0.5),
+                        RGBA(254, 242, 242, 0.5)
+                    )
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Text: =""
+                  Width: =530
+                  X: =0
+                  Y: =0
+
+            - LblReviewQNum:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(56, 0, 209, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =24
+                  Size: =11
+                  Text: |-
+                    ="Câu " & ThisItem.sortOrder & " (" & ThisItem.id & "):"
+                  Width: =150
+                  X: =12
+                  Y: =8
+
+            - LblReviewUserAns:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: |-
+                    =If(
+                        LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey = ThisItem.correct,
+                        RGBA(22, 101, 52, 1),
+                        RGBA(225, 29, 72, 1)
+                    )
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =24
+                  Size: =11
+                  Text: |-
+                    ="Bạn chọn: " & Coalesce(LookUp(colUserAnswers, QuestionId = ThisItem.id).SelectedKey, "Chưa chọn") & " | Đúng: " & ThisItem.correct
+                  Width: =340
+                  X: =175
+                  Y: =8
+
+            - LblReviewExplanation:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(71, 85, 105, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =52
+                  LineHeight: =1.3
+                  Size: =10.5
+                  Text: =ThisItem.explanation
+                  Width: =505
+                  X: =12
+                  Y: =34
+
+            - LblReviewBasis:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(148, 163, 184, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =20
+                  Size: =10
+                  Text: |-
+                    ="Căn cứ: " & ThisItem.basis
+                  Width: =505
+                  X: =12
+                  Y: =86
+
+      - BtnFinishQuizReturn:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledColor: =RGBA(255, 255, 255, 0.5)
+            DisabledFill: =RGBA(56, 0, 209, 0.5)
+            Fill: =RGBA(56, 0, 209, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =48
+            HoverColor: =RGBA(255, 255, 255, 1)
+            HoverFill: =RGBA(49, 46, 129, 1)
+            OnSelect: |-
+              =Navigate(QuyTacUngXu_Hub, ScreenTransition.Fade)
+            PressedColor: =RGBA(255, 255, 255, 1)
+            PressedFill: =RGBA(30, 27, 75, 1)
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =13
+            Text: ="Hoàn tất & Về trung tâm quy tắc"
+            Visible: =locQuizCompleted
+            Width: =540
+            X: =50
+            Y: =755

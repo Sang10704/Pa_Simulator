@@ -1,0 +1,6 @@
+token_cache.bin
+__pycache__/
+*.pyc
+unpacked_msapp/
+published/
+.env

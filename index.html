@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SeaZen Power Apps Studio & Live Runtime</title>
+  <style>
+    :root {
+      --bg-app: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-panel-alt: #0b1120;
+      --border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --success: #16a34a;
+      --danger: #e11d48;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-app);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 54px;
+      background: var(--bg-panel-alt);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 13.5px;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+    .brand-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    select, input[type="text"], input[type="date"] {
+      background: var(--bg-panel);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+    select:focus, input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+    .btn {
+      background: var(--bg-panel);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #334155; }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-success {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+    .btn-danger {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+    }
+    .btn.active-mode {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: #0f172a;
+    }
+
+    /* State & OAuth Bar */
+    .statebar {
+      height: 38px;
+      background: #162032;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .state-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 3px 9px;
+      border-radius: 4px;
+      color: #e2e8f0;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .state-chip.on {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+    }
+    .auth-pill {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(22, 163, 74, 0.14);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      color: #bbf7d0;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+    .auth-pill.unauth {
+      background: rgba(225, 29, 72, 0.15);
+      border-color: rgba(251, 113, 133, 0.4);
+      color: #fecdd3;
+    }
+
+    /* Main 3-Pane Workspace */
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr 480px;
+      overflow: hidden;
+    }
+    body.published-mode .pane-left,
+    body.published-mode .pane-right,
+    body.published-mode .studio-only {
+      display: none !important;
+    }
+    body.published-mode .workspace {
+      grid-template-columns: 1fr;
+    }
+
+    /* Left Pane: Tree View */
+    .pane-left {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .pane-header {
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tree-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 6px;
+      font-size: 12px;
+    }
+    .tree-item {
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #cbd5e1;
+    }
+    .tree-item:hover { background: rgba(255,255,255,0.06); }
+    .tree-item.selected {
+      background: rgba(37, 99, 235, 0.28);
+      color: #60a5fa;
+      font-weight: 600;
+    }
+    .tree-type {
+      font-size: 10px;
+      color: #64748b;
+      margin-left: 6px;
+    }
+
+    /* Center Pane: Canvas Stage */
+    .pane-center {
+      background: #090d16;
+      background-image: radial-gradient(#1e293b 1px, transparent 1px);
+      background-size: 20px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: auto;
+      padding: 20px;
+      position: relative;
+    }
+    .canvas-wrapper {
+      transform-origin: top center;
+      transition: transform 0.15s ease;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 0 1px #334155;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      flex-shrink: 0;
+      position: relative;
+    }
+    #pa-canvas {
+      width: 640px;
+      height: 1136px;
+      position: relative;
+      overflow: hidden;
+      background: #ededed;
+      user-select: none;
+    }
+    /* Power Apps Notify Toast Banner */
+    #pa-toast {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      padding: 12px 18px;
+      background: #16a34a;
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 600;
+      z-index: 20000;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .pa-ctrl {
+      position: absolute;
+      box-sizing: border-box;
+      overflow: hidden;
+      transition: outline 0.08s;
+    }
+    body.design-mode .pa-ctrl:hover {
+      outline: 1px dashed #2563eb !important;
+    }
+    .pa-ctrl.ctrl-selected {
+      outline: 2px solid #2563eb !important;
+      z-index: 9998 !important;
+    }
+    .pa-error-badge {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #e11d48;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .pa-input-el {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 6px 10px;
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    /* Right Pane: YAML Code + Diagnostics */
+    .pane-right {
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #yaml-editor {
+      flex: 1;
+      width: 100%;
+      background: #0b1120;
+      color: #e2e8f0;
+      border: none;
+      padding: 12px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      white-space: pre;
+      overflow: auto;
+    }
+    .diag-panel {
+      height: 175px;
+      border-top: 1px solid var(--border);
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .diag-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+    .diag-item {
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      border-left: 3px solid var(--danger);
+      background: rgba(225, 29, 72, 0.1);
+      color: #fecdd3;
+      line-height: 1.4;
+    }
+    .diag-ok {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border-left: 3px solid var(--success);
+      background: rgba(22, 163, 74, 0.1);
+      color: #bbf7d0;
+    }
+    .prop-inspector {
+      padding: 8px 12px;
+      background: #162032;
+      border-top: 1px solid var(--border);
+      font-size: 11.5px;
+      color: #cbd5e1;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* Modal: SharePoint Live CRUD Explorer & Publish Info */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.78);
+      z-index: 30000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 100%;
+      max-width: 1020px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+    .modal-header {
+      padding: 14px 18px;
+      background: var(--bg-panel-alt);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .modal-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .sp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .sp-table th, .sp-table td {
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .sp-table th {
+      background: #0f172a;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .sp-table tr:hover td {
+      background: rgba(255,255,255,0.03);
+    }
+    .crud-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 8px;
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      align-items: end;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body class="design-mode">
+
+  <!-- Hidden Browser File Input Fallback -->
+  <input type="file" id="browser-file-input" accept=".yaml,.yml,.pa.yaml,.msapp" multiple style="display:none" onchange="handleBrowserFileSelect(event)" />
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-badge">SEAZEN PA STUDIO</span>
+      <span id="app-title-label">Power Apps Local Sandbox & Live SharePoint CRUD</span>
+    </div>
+
+    <!-- File Open & Screen Switcher -->
+    <div class="toolbar-group">
+      <button class="btn" onclick="openLocalFileNative()" title="Mở file .pa.yaml hoặc .msapp bất kỳ từ máy tính">
+        Mở File (.pa.yaml / .msapp)
+      </button>
+      <button class="btn studio-only" onclick="openLocalFolderNative()" title="Chọn thư mục chứa các màn hình .pa.yaml">
+        Mở Thư mục
+      </button>
+      <select id="screen-select" onchange="loadScreenFile(this.value)" title="Chọn màn hình để chạy hoặc sửa"></select>
+      <button class="btn studio-only" onclick="loadTemplateCrudApp()">Mẫu App CRUD SharePoint</button>
+    </div>
+
+    <!-- Runtime, CRUD Data & Publish -->
+    <div class="toolbar-group">
+      <button class="btn" onclick="openSpCrudModal()">CSDL SharePoint (Live CRUD)</button>
+      <button class="btn studio-only" id="btn-mode" onclick="togglePlayMode()">Chế độ: Thiết kế (Inspect)</button>
+      <select id="zoom-select" onchange="setCanvasZoom(this.value)">
+        <option value="0.65">Zoom: 65%</option>
+        <option value="0.74" selected>Zoom: 74%</option>
+        <option value="0.85">Zoom: 85%</option>
+        <option value="1">Zoom: 100%</option>
+      </select>
+      <button class="btn btn-primary studio-only" onclick="copyYamlToClipboard()">Copy YAML</button>
+      <button class="btn btn-success studio-only" onclick="saveCurrentScreen()">Lưu File</button>
+      <button class="btn btn-primary" id="btn-publish-toggle" onclick="publishAndRunStandalone()">Xuất bản App (Publish)</button>
+    </div>
+  </div>
+
+  <!-- Live Context, Variables & OAuth2 Token Bar -->
+  <div class="statebar">
+    <strong style="color:#f8fafc;">Biến Runtime:</strong>
+    <div class="state-chip on" id="chip-popup" onclick="toggleVar('locShowPopupNoti')">
+      locShowPopupNoti: <b id="val-popup">true</b>
+    </div>
+    <div class="state-chip" id="chip-detail" onclick="toggleVar('varShowNotiDetail')">
+      varShowNotiDetail: <b id="val-detail">false</b>
+    </div>
+    <div class="state-chip on" onclick="cycleTab()">
+      locTabThongBao: <b id="val-tab">"Tất cả"</b>
+    </div>
+    <button class="btn" style="padding:2px 8px;font-size:11px;" onclick="refreshLiveSpData()">Làm mới dữ liệu SP</button>
+
+    <div class="auth-pill" id="oauth-status-pill">
+      <span id="oauth-user-text">Đang kiểm tra OAuth2 Token...</span>
+      <button class="btn" style="padding:2px 7px;font-size:11px;background:#0f172a;" onclick="triggerOAuthLogin()">Đổi TK / Đăng nhập</button>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <div class="workspace">
+    <!-- Left: Control Tree View -->
+    <div class="pane-left">
+      <div class="pane-header">
+        <span>Tree View (Cây Control)</span>
+        <span id="ctrl-count">0 controls</span>
+      </div>
+      <div class="tree-container" id="tree-view"></div>
+    </div>
+
+    <!-- Center: 640x1136 Canvas -->
+    <div class="pane-center">
+      <div class="canvas-wrapper" id="canvas-wrapper" style="transform: scale(0.74);">
+        <div id="pa-toast"></div>
+        <div id="pa-canvas"></div>
+      </div>
+    </div>
+
+    <!-- Right: YAML Live Editor & Diagnostics -->
+    <div class="pane-right">
+      <div class="pane-header">
+        <span id="editor-file-label">YAML Source Editor</span>
+        <button class="btn" style="padding:2px 8px;font-size:11px;" onclick="parseAndRenderYaml()">Render Ngay</button>
+      </div>
+      <textarea id="yaml-editor" spellcheck="false" placeholder="Mở file .pa.yaml hoặc dán mã YAML của Screen vào đây..."></textarea>
+      <div class="prop-inspector" id="prop-inspector">
+        <span>Chọn 1 control trên màn hình để xem tọa độ (X, Y, Width, Height) và công thức</span>
+      </div>
+      <div class="diag-panel">
+        <div class="pane-header">
+          <span>Trình Kiểm Thử Tĩnh (PowerFx & SharePoint Delegation Linter)</span>
+          <span id="diag-badge">0 lỗi</span>
+        </div>
+        <div class="diag-list" id="diag-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SharePoint Live CRUD Modal -->
+  <div class="modal-backdrop" id="sp-crud-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Quản trị & Thao tác CRUD Trực tiếp SharePoint Online (OAuth2 Bearer Token)</span>
+        <button class="btn" onclick="closeSpCrudModal()">Đóng</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <label style="font-size:12px;color:var(--text-muted);">Chọn Danh sách SharePoint (ONESEAZEN):</label>
+          <select id="crud-list-select" style="min-width:340px;" onchange="loadCrudListItems()"></select>
+          <button class="btn btn-primary" onclick="loadCrudListItems()">Tải dữ liệu thực (Read)</button>
+          <span id="crud-status-msg" style="font-size:12px;color:#38bdf8;margin-left:auto;"></span>
+        </div>
+
+        <!-- Create / Update Form -->
+        <div class="crud-form-grid">
+          <div class="field-group">
+            <label>ID Bản ghi (Để trống = Tạo mới / Nhập ID = Patch cập nhật)</label>
+            <input type="text" id="crud-input-id" placeholder="VD: 5307 (Trống = Create)" />
+          </div>
+          <div class="field-group">
+            <label>Tiêu đề (Title)</label>
+            <input type="text" id="crud-input-title" placeholder="Nhập Title..." />
+          </div>
+          <div class="field-group">
+            <label>Nội dung / Dữ liệu JSON bổ sung (NoiDung, NguoiNhan...)</label>
+            <input type="text" id="crud-input-extra" placeholder='VD: {"NoiDung":"...", "HienThiNoi":"Hiện"}' />
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-success" onclick="submitSpCrud('create')">+ Tạo mới (POST)</button>
+            <button class="btn btn-primary" onclick="submitSpCrud('update')">Cập nhật (PATCH)</button>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div style="overflow-x:auto;max-height:460px;">
+          <table class="sp-table">
+            <thead>
+              <tr>
+                <th style="width:70px;">ID</th>
+                <th style="width:240px;">Title</th>
+                <th>Các trường dữ liệu chính (Fields)</th>
+                <th style="width:150px;">Created</th>
+                <th style="width:150px;">Thao tác CRUD</th>
+              </tr>
+            </thead>
+            <tbody id="crud-table-body">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Bấm "Tải dữ liệu thực" để xem danh sách bản ghi từ SharePoint.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentScreenName = "ThongBao_LichSu.pa.yaml";
+    let currentAst = null;
+    let isPlayMode = false;
+    let isPublishedMode = false;
+    let selectedControlName = null;
+    let debounceTimer = null;
+    let navHistory = [];
+
+    // Interactive Control Values (TextInput, Dropdown, DatePicker, Checkbox)
+    const controlValues = {};
+
+    // Runtime State
+    const appState = {
+      locShowPopupNoti: true,
+      varShowNotiDetail: false,
+      locBungAnh: false,
+      varShowPhanAnh: false,
+      varShowPopupWarningChiTiet: false,
+      locTabThongBao: "Tất cả",
+      selectedNotiItem: null,
+      customVars: {},
+      collections: {},
+      spData: {
+        msnv: "14703",
+        hoTen: "NGUYỄN HUỲNH VĂN SANG",
+        notifications: [],
+        latestPopup: {
+          ID: 5307,
+          Title: "CHĂM LO TẾT ĐINH MÙI 2027",
+          NoiDung: "<div style='padding:12px;background:#fff8e9;border:1px solid #d9a441;border-radius:8px;'><h3 style='color:#a51f24;margin:0 0 8px 0;'>THÔNG BÁO ĐĂNG KÝ CHĂM LO TẾT ĐINH MÙI 2027</h3><p>Công đoàn SeaZen được phân bổ <b>91 suất chăm lo Tết</b>.</p><p><b>Hạn đăng ký:</b> 17h00 thứ Hai, 02/11/2026.</p></div>",
+          LoaiDon: { Value: "Khác" },
+          LoaiThongBao: { Value: "Hệ thống" },
+          KieuThongBao: { Value: "Thông báo HTML" },
+          Created: "30/10/2026 12:15",
+          CreatedBy: "Ban Chấp Hành Công Đoàn SeaZen"
+        },
+        examAlerts: []
+      }
+    };
+
+    function showPaToast(message, type = "success") {
+      const toast = document.getElementById("pa-toast");
+      toast.style.display = "flex";
+      toast.style.background = type === "error" ? "#e11d48" : (type === "warning" ? "#d97706" : "#16a34a");
+      toast.innerHTML = `<span>${message}</span><span style="cursor:pointer;font-weight:800;" onclick="this.parentElement.style.display='none'">✕</span>`;
+      setTimeout(() => { toast.style.display = "none"; }, 4200);
+    }
+
+    async function initSandbox() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "published" || window.location.pathname === "/player") {
+        enablePublishedView(true);
+      }
+
+      await checkOAuthStatus();
+      await refreshLiveSpData(false);
+      await reloadScreenDropdown("ThongBao_LichSu.pa.yaml");
+      await loadSpListsForCrudModal();
+
+      document.getElementById("yaml-editor").addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(parseAndRenderYaml, 300);
+      });
+    }
+
+    async function checkOAuthStatus() {
+      try {
+        const res = await fetch("/api/auth/status");
+        const data = await res.json();
+        const pill = document.getElementById("oauth-status-pill");
+        const txt = document.getElementById("oauth-user-text");
+        if (data.authenticated) {
+          pill.classList.remove("unauth");
+          txt.textContent = `OAuth2 Token: ${data.username}`;
+        } else {
+          pill.classList.add("unauth");
+          txt.textContent = `Chưa đăng nhập OAuth2`;
+        }
+      } catch (e) {
+        console.warn("OAuth check error:", e);
+      }
+    }
+
+    async function triggerOAuthLogin() {
+      const txt = document.getElementById("oauth-user-text");
+      txt.textContent = "Đang mở cửa sổ đăng nhập Microsoft OAuth2...";
+      const res = await fetch("/api/auth/login", { method: "POST", body: "{}" });
+      const data = await res.json();
+      await checkOAuthStatus();
+      if (data.authenticated) {
+        showPaToast(`Đã xác thực OAuth2 thành công: ${data.username}`);
+        await refreshLiveSpData(true);
+      } else {
+        showPaToast(`Lỗi đăng nhập: ${data.error || "Đã hủy"}`, "error");
+      }
+    }
+
+    async function refreshLiveSpData(force = true) {
+      try {
+        const res = await fetch(`/api/sp-data?msnv=14703&refresh=${force ? '1' : '0'}`);
+        const data = await res.json();
+        appState.spData = data;
+        appState.selectedNotiItem = (data.notifications && data.notifications[0]) || data.latestPopup;
+        if (currentAst) renderCanvasFromAst(currentAst);
+        if (force) showPaToast(`Đã đồng bộ ${data.notifications ? data.notifications.length : 0} thông báo thực từ SharePoint Online.`);
+      } catch (e) {
+        console.warn("SP Data fetch fallback:", e);
+      }
+    }
+
+    async function reloadScreenDropdown(preferredFile = null) {
+      const res = await fetch("/api/screens");
+      const data = await res.json();
+      const sel = document.getElementById("screen-select");
+      sel.innerHTML = "";
+      const screens = data.screens || [];
+      screens.forEach(fn => {
+        const opt = document.createElement("option");
+        opt.value = fn;
+        opt.textContent = fn;
+        if (preferredFile && fn === preferredFile) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      const target = preferredFile && screens.includes(preferredFile) ? preferredFile : (screens[0] || "ThongBao_LichSu.pa.yaml");
+      if (target) await loadScreenFile(target);
+    }
+
+    // Open File from PC (Native Windows Dialog + Browser fallback)
+    async function openLocalFileNative() {
+      try {
+        const res = await fetch("/api/dialog/open-file", { method: "POST", body: "{}" });
+        const data = await res.json();
+        if (data.cancelled) return;
+        if (data.error) {
+          document.getElementById("browser-file-input").click();
+          return;
+        }
+        if (data.firstFile) {
+          await reloadScreenDropdown(data.firstFile);
+          showPaToast(`Đã mở file: ${data.loaded.join(", ")}`);
+        }
+      } catch (e) {
+        document.getElementById("browser-file-input").click();
+      }
+    }
+
+    async function handleBrowserFileSelect(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      const f = files[0];
+      const text = await f.text();
+      currentScreenName = f.name;
+      document.getElementById("editor-file-label").textContent = `YAML Source: ${f.name} (Local File)`;
+      document.getElementById("yaml-editor").value = text;
+      await parseAndRenderYaml();
+      showPaToast(`Đã nạp file cục bộ: ${f.name}`);
+    }
+
+    // Open Folder from PC
+    async function openLocalFolderNative() {
+      const res = await fetch("/api/dialog/open-folder", { method: "POST", body: "{}" });
+      const data = await res.json();
+      if (data.cancelled || !data.screens) return;
+      await reloadScreenDropdown(data.firstFile);
+      showPaToast(`Đã nạp thư mục (${data.screens.length} màn hình .pa.yaml)`);
+    }
+
+    async function loadScreenFile(filename, pushHistory = true) {
+      if (pushHistory && currentScreenName && currentScreenName !== filename) {
+        navHistory.push(currentScreenName);
+      }
+      currentScreenName = filename;
+      const sel = document.getElementById("screen-select");
+      if (sel) sel.value = filename;
+      document.getElementById("editor-file-label").textContent = `YAML Source: ${filename}`;
+      const res = await fetch(`/api/screen?name=${encodeURIComponent(filename)}`);
+      const data = await res.json();
+      document.getElementById("yaml-editor").value = data.rawYaml || "";
+      currentAst = data.ast;
+      renderDiagnostics(data.diagnostics || [], data.valid);
+      if (currentAst) {
+        renderTreeView(currentAst);
+        renderCanvasFromAst(currentAst);
+      }
+    }
+
+    async function parseAndRenderYaml() {
+      const rawYaml = document.getElementById("yaml-editor").value;
+      const res = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ yaml: rawYaml })
+      });
+      const data = await res.json();
+      renderDiagnostics(data.diagnostics || [], data.valid);
+      if (data.valid && data.ast) {
+        currentAst = data.ast;
+        renderTreeView(currentAst);
+        renderCanvasFromAst(currentAst);
+      }
+    }
+
+    function renderDiagnostics(diags, valid) {
+      const list = document.getElementById("diag-list");
+      const badge = document.getElementById("diag-badge");
+      list.innerHTML = "";
+      if (!diags || diags.length === 0) {
+        badge.textContent = "0 lỗi (Chuẩn 100%)";
+        badge.style.color = "#4ade80";
+        list.innerHTML = `<div class="diag-ok">Cú pháp YAML & Power Fx hợp lệ 100%. Sẵn sàng chạy trực tiếp hoặc Copy/Paste vào Power Apps Studio.</div>`;
+        return;
+      }
+      badge.textContent = `${diags.length} cảnh báo/lỗi`;
+      badge.style.color = "#fb7185";
+      diags.forEach(d => {
+        const div = document.createElement("div");
+        div.className = "diag-item";
+        div.innerHTML = `<strong>[${d.rule}]</strong> ${d.message}`;
+        list.appendChild(div);
+      });
+    }
+
+    function extractScreenRoot(ast) {
+      let screenProps = { Fill: "=RGBA(237, 237, 237, 1)" };
+      let children = [];
+      if (!ast) return { screenProps, children };
+
+      if (Array.isArray(ast)) {
+        children = ast;
+      } else if (typeof ast === "object") {
+        if (ast.Screens && typeof ast.Screens === "object") {
+          const firstScreenKey = Object.keys(ast.Screens)[0];
+          const sObj = ast.Screens[firstScreenKey] || {};
+          screenProps = sObj.Properties || screenProps;
+          children = sObj.Children || [];
+        } else {
+          const firstKey = Object.keys(ast)[0];
+          if (ast[firstKey] && ast[firstKey].Children) {
+            screenProps = ast[firstKey].Properties || screenProps;
+            children = ast[firstKey].Children || [];
+          }
+        }
+      }
+      return { screenProps, children };
+    }
+
+    function renderTreeView(ast) {
+      const treeEl = document.getElementById("tree-view");
+      treeEl.innerHTML = "";
+      const { children } = extractScreenRoot(ast);
+      let count = 0;
+
+      function buildNodes(nodes, depth) {
+        if (!Array.isArray(nodes)) return;
+        nodes.forEach(item => {
+          if (!item || typeof item !== "object") return;
+          const ctrlName = Object.keys(item)[0];
+          const body = item[ctrlName] || {};
+          count++;
+          const row = document.createElement("div");
+          row.className = "tree-item" + (selectedControlName === ctrlName ? " selected" : "");
+          row.style.paddingLeft = `${8 + depth * 14}px`;
+          const shortType = String(body.Control || "Control").split("@")[0];
+          row.innerHTML = `<span>${ctrlName}</span><span class="tree-type">${shortType}</span>`;
+          row.onclick = () => selectControl(ctrlName, body);
+          treeEl.appendChild(row);
+          if (Array.isArray(body.Children)) {
+            buildNodes(body.Children, depth + 1);
+          }
+        });
+      }
+      buildNodes(children, 0);
+      document.getElementById("ctrl-count").textContent = `${count} controls`;
+    }
+
+    function selectControl(ctrlName, body) {
+      selectedControlName = ctrlName;
+      document.querySelectorAll(".pa-ctrl").forEach(el => {
+        el.classList.toggle("ctrl-selected", el.dataset.name === ctrlName);
+      });
+      const p = (body && body.Properties) || {};
+      document.getElementById("prop-inspector").innerHTML =
+        `<strong>${ctrlName}</strong> (${body.Control || ''}) &nbsp;|&nbsp; X: ${p.X || 0} • Y: ${p.Y || 0} • W: ${p.Width || 'auto'} • H: ${p.Height || 'auto'}`;
+
+      const editor = document.getElementById("yaml-editor");
+      const idx = editor.value.indexOf(`- ${ctrlName}:`);
+      if (idx !== -1) {
+        const linesBefore = editor.value.substring(0, idx).split("\n").length;
+        editor.scrollTop = Math.max(0, (linesBefore - 4) * 18);
+      }
+      renderTreeView(currentAst);
+    }
+
+    // Power Fx Evaluators
+    function evalNum(expr, parentW = 640, parentH = 1136, defVal = 0) {
+      if (expr === undefined || expr === null || expr === "") return defVal;
+      if (typeof expr === "number") return expr;
+      let s = String(expr).trim();
+      if (s.startsWith("=")) s = s.substring(1).trim();
+      if (s === "Parent.Width" || s === "Parent.TemplateWidth") return parentW;
+      if (s === "Parent.Height" || s === "Parent.TemplateHeight") return parentH;
+      if (s.startsWith("Parent.Width")) {
+        const m = s.match(/Parent\.Width\s*([+-])\s*(\d+)/);
+        if (m) return m[1] === "-" ? parentW - Number(m[2]) : parentW + Number(m[2]);
+      }
+      const n = parseFloat(s);
+      return isNaN(n) ? defVal : n;
+    }
+
+    function evalColor(expr, itemCtx = null, defColor = "transparent") {
+      if (!expr) return defColor;
+      let s = String(expr).trim();
+      if (s.startsWith("=")) s = s.substring(1).trim();
+
+      if (itemCtx && s.includes("ThisItem.StatusColor")) {
+        return itemCtx.StatusColor || "rgba(22, 101, 52, 1)";
+      }
+      if (s.includes("locTabThongBao")) {
+        const m = s.match(/locTabThongBao\s*=\s*"([^"]+)"/);
+        if (m) {
+          const isMatch = appState.locTabThongBao === m[1];
+          return isMatch ? "rgba(9, 33, 98, 1)" : "rgba(166, 166, 166, 1)";
+        }
+      }
+      const rgbaMatch = s.match(/RGBA\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i);
+      if (rgbaMatch) {
+        return `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, ${rgbaMatch[4]})`;
+      }
+      if (s.includes("Color.White")) return "#ffffff";
+      if (s.includes("Color.Transparent")) return "transparent";
+      return defColor;
+    }
+
+    function evalVisible(expr, itemCtx = null) {
+      if (expr === undefined || expr === null) return true;
+      let s = String(expr).trim();
+      if (s.startsWith("=")) s = s.substring(1).trim();
+      if (s === "true") return true;
+      if (s === "false") return false;
+      if (s === "locShowPopupNoti") return !!appState.locShowPopupNoti;
+      if (s === "varShowNotiDetail") return !!appState.varShowNotiDetail;
+      if (s === "locBungAnh") return !!appState.locBungAnh;
+      if (s === "varShowPhanAnh") return !!appState.varShowPhanAnh;
+      if (s.includes("varShowPopupWarningChiTiet")) return !!appState.varShowPopupWarningChiTiet;
+      if (appState.customVars[s] !== undefined) return !!appState.customVars[s];
+      if (s.includes('locTabThongBao = "Cá nhân"')) return appState.locTabThongBao === "Cá nhân";
+      if (s.includes('locTabThongBao = "Hệ thống"')) return appState.locTabThongBao === "Hệ thống";
+      if (s.includes('locTabThongBao = "Tất cả"')) return appState.locTabThongBao === "Tất cả";
+      return true;
+    }
+
+    function evalValueExpr(rawExpr, itemCtx = null) {
+      if (rawExpr === undefined || rawExpr === null) return "";
+      let s = String(rawExpr).trim();
+      if (s.startsWith("=")) s = s.substring(1).trim();
+      if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+        return s.slice(1, -1);
+      }
+      // Check Control.Text / Control.Selected.Value / Control.SelectedDate
+      const ctrlMatch = s.match(/^([A-Za-z0-9_]+)\.(Text|Selected\.Value|SelectedDate|Value)$/);
+      if (ctrlMatch) {
+        const cName = ctrlMatch[1];
+        const prop = ctrlMatch[2];
+        const cObj = controlValues[cName] || {};
+        if (prop === "Selected.Value") return (cObj.Selected && cObj.Selected.Value) || "";
+        return cObj[prop] !== undefined ? cObj[prop] : "";
+      }
+      if (itemCtx && s.startsWith("ThisItem.")) {
+        const fName = s.replace("ThisItem.", "").trim();
+        if (fName.endsWith(".Value")) {
+          const base = fName.replace(".Value", "");
+          return (itemCtx[base] && itemCtx[base].Value) || itemCtx[base] || "";
+        }
+        return itemCtx[fName] !== undefined ? itemCtx[fName] : "";
+      }
+      if (appState.customVars[s] !== undefined) return appState.customVars[s];
+      return s;
+    }
+
+    function evalText(expr, itemCtx = null) {
+      if (expr === undefined || expr === null) return "";
+      let s = String(expr).trim();
+      if (s.startsWith("=")) s = s.substring(1).trim();
+
+      const popup = appState.spData.latestPopup || {};
+      const selNoti = appState.selectedNotiItem || popup;
+
+      const usesOldLookup = s.includes("LookUp") && s.includes("APP CHẤM CÔNG - THÔNG BÁO");
+      const activeNoti = usesOldLookup
+        ? {
+            ID: 424,
+            Title: "THANH TOÁN LƯƠNG T08.2026 (Tin cũ ID #424 do lỗi LookUp)",
+            NoiDung: "<div style='color:#be123c;'><b>CẢNH BÁO SANDBOX:</b> Control này vẫn đang gọi LookUp('APP CHẤM CÔNG - THÔNG BÁO') trực tiếp nên bốc phải tin cũ ID 424! Hãy đổi sang biến <b>locNotiHienTai</b>.</div>",
+            Created: "04/09/2026 19:09",
+            LoaiDon: { Value: "Khác" },
+            CreatedBy: "Huong, Do Thi [SZ.HR-CB-HEAD]"
+          }
+        : popup;
+
+      if (itemCtx) {
+        if (s === "ThisItem.ID" || s === `"#" & ThisItem.ID`) return s.includes("#") ? `#${itemCtx.ID || ""}` : String(itemCtx.ID || "");
+        if (s === "ThisItem.Title" || s === "PlainText(ThisItem.Title)") return itemCtx.Title || "";
+        if (s === "ThisItem.Desc") return itemCtx.Desc || "";
+        if (s === "ThisItem.Tag") return itemCtx.Tag || "";
+        if (s === "ThisItem.TimeTag") return itemCtx.TimeTag || "";
+        if (s === "ThisItem.StatusText") return itemCtx.StatusText || "";
+        if (s === "ThisItem.ActionText") return itemCtx.ActionText || "";
+        if (s === "PlainText(ThisItem.NoiDung)" || s === "ThisItem.NoiDung") {
+          return String(itemCtx.NoiDung || "").replace(/<[^>]+>/g, " ").trim();
+        }
+        if (s === "ThisItem.Created") return itemCtx.Created || "";
+        if (s.includes("ThisItem.LoaiDon.Value")) {
+          return "Loại đơn: " + ((itemCtx.LoaiDon && itemCtx.LoaiDon.Value) || itemCtx.LoaiDon || "Khác");
+        }
+        const genericField = s.match(/^ThisItem\.([A-Za-z0-9_]+)$/);
+        if (genericField && itemCtx[genericField[1]] !== undefined) {
+          const val = itemCtx[genericField[1]];
+          return typeof val === "object" && val !== null ? (val.Value || JSON.stringify(val)) : String(val);
+        }
+      }
+
+      if (s.includes("locNotiHienTai.Title") || (usesOldLookup && s.includes("itemThongBao.Title"))) {
+        return `<div style='font-size: 18px; font-weight: 800; color: #1e293b; line-height: 1.35;'>${activeNoti.Title || "Thông báo mới"}</div>`;
+      }
+      if (s.includes("locNotiHienTai.NoiDung") || (usesOldLookup && s.includes("itemThongBao.NoiDung"))) {
+        return activeNoti.NoiDung || "";
+      }
+      if (s.includes("locNotiHienTai.Created") || (usesOldLookup && s.includes("_item.Created"))) {
+        return `${activeNoti.Created || "30/10/2026 12:15"}  •  ${(activeNoti.LoaiDon && activeNoti.LoaiDon.Value) || "Hệ thống"}`;
+      }
+      if (s.includes("Bộ phận quản lý thông báo SEAZEN")) {
+        const sender = s.includes("Gallery2_19.Selected") ? (selNoti.CreatedBy || "Phòng Nhân Sự") : (activeNoti.CreatedBy || "Phòng Nhân Sự");
+        return `${sender}\nBộ phận quản lý thông báo SEAZEN`;
+      }
+      if (s.includes("Gallery2_19.Selected.Title")) {
+        return `<div style='font-size: 18px; font-weight: 800; color: #1e293b; line-height: 1.35;'>${selNoti.Title || "Thông báo"}</div>`;
+      }
+      if (s.includes("Gallery2_19.Selected.NoiDung")) {
+        return selNoti.NoiDung || "";
+      }
+      if (s.includes("Gallery2_19.Selected.Created")) {
+        return `${selNoti.Created || ""}  •  ${(selNoti.LoaiDon && selNoti.LoaiDon.Value) || "Hệ thống"}`;
+      }
+      if (s.startsWith("CountRows")) {
+        return String((appState.spData.notifications || []).length || 2);
+      }
+      if (s.startsWith('"') && s.endsWith('"')) {
+        return s.slice(1, -1).replace(/\\n/g, "\n");
+      }
+      return s;
+    }
+
+    // Execute Power Fx OnSelect (including real SharePoint CRUD via OAuth2 Token!)
+    async function executePowerFx(formula, itemCtx = null) {
+      if (!formula) return;
+      let s = String(formula).trim();
+      if (s.startsWith("=")) s = s.substring(1).trim();
+
+      // 1. Check Patch('ListName', Defaults(...), { ... }) or Patch('ListName', ThisItem, { ... })
+      const patchMatch = s.match(/Patch\(\s*'([^']+)'\s*,\s*([^,]+)\s*,\s*\{([\s\S]*?)\}\s*\)/i);
+      if (patchMatch) {
+        const listName = patchMatch[1];
+        const targetExpr = patchMatch[2].trim();
+        const bodyFieldsRaw = patchMatch[3];
+        const fieldsObj = {};
+        const pairRegex = /([A-Za-z0-9_]+)\s*:\s*([^,\n}]+)/g;
+        let m;
+        while ((m = pairRegex.exec(bodyFieldsRaw)) !== null) {
+          fieldsObj[m[1].trim()] = evalValueExpr(m[2].trim(), itemCtx);
+        }
+
+        const isCreate = targetExpr.toLowerCase().includes("defaults");
+        const recordId = !isCreate ? (itemCtx && itemCtx.ID ? itemCtx.ID : evalValueExpr(targetExpr, itemCtx)) : null;
+
+        showPaToast(`Đang gửi lệnh ${isCreate ? 'Create (POST)' : 'Patch (PATCH)'} lên SharePoint '${listName}'...`, "warning");
+        const res = await fetch("/api/sp/crud", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: isCreate ? "create" : "update",
+            list: listName,
+            id: recordId,
+            fields: fieldsObj
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showPaToast(`Đã ${isCreate ? 'tạo mới' : 'cập nhật'} thành công bản ghi ID #${data.id} trên '${listName}'!`);
+          await refreshLiveSpData(true);
+        } else {
+          showPaToast(`Lỗi SharePoint CRUD: ${data.error || 'Không xác định'}`, "error");
+        }
+      }
+
+      // 2. Check Remove('ListName', ThisItem)
+      const removeMatch = s.match(/Remove\(\s*'([^']+)'\s*,\s*([^)]+)\)/i);
+      if (removeMatch) {
+        const listName = removeMatch[1];
+        const recId = (itemCtx && itemCtx.ID) ? itemCtx.ID : evalValueExpr(removeMatch[2].trim(), itemCtx);
+        if (recId) {
+          showPaToast(`Đang xóa bản ghi ID #${recId} khỏi '${listName}'...`, "warning");
+          const res = await fetch("/api/sp/crud", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete", list: listName, id: recId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showPaToast(`Đã xóa bản ghi ID #${recId} khỏi SharePoint '${listName}'.`);
+            await refreshLiveSpData(true);
+          } else {
+            showPaToast(`Lỗi khi xóa: ${data.error}`, "error");
+          }
+        }
+      }
+
+      // 3. Check Notify("...")
+      const notifyMatch = s.match(/Notify\(\s*"([^"]+)"/);
+      if (notifyMatch) {
+        showPaToast(notifyMatch[1], s.includes("Error") ? "error" : "success");
+      }
+
+      // 4. Built-in State & Navigation
+      if (s.includes("locShowPopupNoti: false")) appState.locShowPopupNoti = false;
+      if (s.includes("locShowPopupNoti: true")) appState.locShowPopupNoti = true;
+      if (s.includes("varShowNotiDetail: false")) appState.varShowNotiDetail = false;
+      if (s.includes("varShowNotiDetail: true") || s.includes("Select(Parent)")) {
+        if (itemCtx) appState.selectedNotiItem = itemCtx;
+        appState.varShowNotiDetail = true;
+      }
+      if (s.includes('locTabThongBao: "Tất cả"')) appState.locTabThongBao = "Tất cả";
+      if (s.includes('locTabThongBao: "Hệ thống"')) appState.locTabThongBao = "Hệ thống";
+      if (s.includes('locTabThongBao: "Cá nhân"')) appState.locTabThongBao = "Cá nhân";
+
+      // Generic Set(var, val)
+      const setMatch = s.match(/Set\(\s*([A-Za-z0-9_]+)\s*,\s*([^)]+)\)/);
+      if (setMatch) {
+        appState.customVars[setMatch[1].trim()] = evalValueExpr(setMatch[2].trim(), itemCtx);
+      }
+
+      // Navigate(ScreenName) or Back()
+      const navMatch = s.match(/Navigate\(\s*([A-Za-z0-9_]+)/);
+      if (navMatch) {
+        const targetScreen = navMatch[1].trim() + ".pa.yaml";
+        syncStateChips();
+        await loadScreenFile(targetScreen, true);
+        return;
+      }
+      if (s.includes("Back()") && navHistory.length > 0) {
+        const prev = navHistory.pop();
+        await loadScreenFile(prev, false);
+        return;
+      }
+
+      syncStateChips();
+      renderCanvasFromAst(currentAst);
+    }
+
+    function renderIconSvg(iconExpr, color) {
+      const s = String(iconExpr || "");
+      if (s.includes("Home")) return `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${color}" stroke-width="2"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-10.5z"/></svg>`;
+      if (s.includes("Bell")) return `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${color}" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+      if (s.includes("Person")) return `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>`;
+      if (s.includes("Calendar")) return `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${color}" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+      if (s.includes("Trash") || s.includes("Cancel")) return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${color}" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`;
+      if (s.includes("ChevronLeft") || s.includes("BackArrow")) return `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="${color}" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>`;
+      return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`;
+    }
+
+    function renderCanvasFromAst(ast) {
+      const canvas = document.getElementById("pa-canvas");
+      canvas.innerHTML = "";
+      const { screenProps, children } = extractScreenRoot(ast);
+      canvas.style.background = evalColor(screenProps.Fill, null, "#ededed");
+
+      function renderNodeList(nodes, parentEl, parentW, parentH, itemCtx = null, isAutoLayout = false) {
+        if (!Array.isArray(nodes)) return;
+        nodes.forEach(nodeObj => {
+          if (!nodeObj || typeof nodeObj !== "object") return;
+          const ctrlName = Object.keys(nodeObj)[0];
+          const body = nodeObj[ctrlName] || {};
+          const props = body.Properties || {};
+          const ctrlType = String(body.Control || "");
+          const variant = String(body.Variant || "");
+
+          if (!evalVisible(props.Visible, itemCtx)) return;
+
+          const x = evalNum(props.X, parentW, parentH, 0);
+          const y = evalNum(props.Y, parentW, parentH, 0);
+          const w = evalNum(props.Width, parentW, parentH, ctrlType.includes("DataCard") ? parentW : 120);
+          const h = evalNum(props.Height, parentW, parentH, ctrlType.includes("HtmlViewer") ? 260 : 40);
+
+          const el = document.createElement("div");
+          el.className = "pa-ctrl" + (selectedControlName === ctrlName ? " ctrl-selected" : "");
+          el.dataset.name = ctrlName;
+          if (isAutoLayout) {
+            el.style.position = "relative";
+            el.style.flexShrink = "0";
+          } else {
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+          }
+          el.style.width = `${w}px`;
+          if (!props.AutoHeight) {
+            el.style.height = `${h}px`;
+          } else {
+            el.style.minHeight = `${Math.max(h, 28)}px`;
+          }
+
+          const rTL = evalNum(props.RadiusTopLeft, w, h, 0);
+          const rTR = evalNum(props.RadiusTopRight, w, h, rTL);
+          const rBR = evalNum(props.RadiusBottomRight, w, h, rTL);
+          const rBL = evalNum(props.RadiusBottomLeft, w, h, rTL);
+          if (rTL || rTR || rBR || rBL) {
+            el.style.borderRadius = `${rTL}px ${rTR}px ${rBR}px ${rBL}px`;
+          }
+
+          const rawFill = String(props.Fill || "");
+          const rawHoverFill = String(props.HoverFill || "");
+          const hasInvalidStatusBg = rawFill.includes("StatusBg") || rawHoverFill.includes("StatusBg");
+          if (ctrlType.includes("Classic/Button") && hasInvalidStatusBg) {
+            el.style.background = "#000000";
+            const badge = document.createElement("div");
+            badge.className = "pa-error-badge";
+            badge.title = "Lỗi: ThisItem.StatusBg không tồn tại khiến Classic/Button biến thành màu đen!";
+            badge.textContent = "×";
+            el.appendChild(badge);
+          } else {
+            el.style.background = evalColor(props.Fill, itemCtx, "transparent");
+          }
+
+          const bThick = evalNum(props.BorderThickness, w, h, 0);
+          if (bThick > 0 && String(props.BorderStyle || "") !== "BorderStyle.None") {
+            el.style.border = `${bThick}px solid ${evalColor(props.BorderColor, itemCtx, "#cbd5e1")}`;
+          }
+
+          const fontSize = evalNum(props.Size, w, h, 13);
+          el.style.fontSize = `${fontSize}px`;
+          el.style.color = evalColor(props.Color, itemCtx, "#1e293b");
+          const fw = String(props.FontWeight || "");
+          if (fw.includes("Bold")) el.style.fontWeight = "700";
+          else if (fw.includes("Semibold")) el.style.fontWeight = "600";
+
+          // Interactive TextInput
+          if (ctrlType.includes("TextInput")) {
+            if (!controlValues[ctrlName]) {
+              controlValues[ctrlName] = { Text: evalText(props.Default, itemCtx) };
+            }
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.className = "pa-input-el";
+            inp.placeholder = evalText(props.HintText, itemCtx) || "";
+            inp.value = controlValues[ctrlName].Text || "";
+            inp.oninput = (ev) => { controlValues[ctrlName].Text = ev.target.value; };
+            inp.onclick = (ev) => ev.stopPropagation();
+            el.appendChild(inp);
+          }
+          // Interactive Dropdown / ComboBox
+          else if (ctrlType.includes("Dropdown") || ctrlType.includes("ComboBox")) {
+            let opts = ["Hệ thống", "Cá nhân", "Khác"];
+            const rawItems = String(props.Items || "");
+            const arrMatch = rawItems.match(/\[(.*)\]/);
+            if (arrMatch) {
+              opts = arrMatch[1].split(",").map(x => x.trim().replace(/^["']|["']$/g, ""));
+            }
+            if (!controlValues[ctrlName]) {
+              controlValues[ctrlName] = { Selected: { Value: opts[0] || "" } };
+            }
+            const sel = document.createElement("select");
+            sel.className = "pa-input-el";
+            opts.forEach(o => {
+              const optEl = document.createElement("option");
+              optEl.value = o;
+              optEl.textContent = o;
+              if (controlValues[ctrlName].Selected.Value === o) optEl.selected = true;
+              sel.appendChild(optEl);
+            });
+            sel.onchange = (ev) => { controlValues[ctrlName].Selected = { Value: ev.target.value }; };
+            sel.onclick = (ev) => ev.stopPropagation();
+            el.appendChild(sel);
+          }
+          // Interactive DatePicker
+          else if (ctrlType.includes("DatePicker")) {
+            if (!controlValues[ctrlName]) {
+              controlValues[ctrlName] = { SelectedDate: new Date().toISOString().slice(0, 10) };
+            }
+            const dp = document.createElement("input");
+            dp.type = "date";
+            dp.className = "pa-input-el";
+            dp.value = controlValues[ctrlName].SelectedDate;
+            dp.onchange = (ev) => { controlValues[ctrlName].SelectedDate = ev.target.value; };
+            dp.onclick = (ev) => ev.stopPropagation();
+            el.appendChild(dp);
+          }
+          // Label & Button
+          else if (ctrlType.includes("Label") || ctrlType.includes("Button")) {
+            el.style.display = "flex";
+            el.style.alignItems = String(props.VerticalAlign || "").includes("Top") ? "flex-start" : "center";
+            const align = String(props.Align || "");
+            if (align.includes("Center") || (ctrlType.includes("Button") && !align)) {
+              el.style.justifyContent = "center";
+              el.style.textAlign = "center";
+            } else if (align.includes("Right")) {
+              el.style.justifyContent = "flex-end";
+              el.style.textAlign = "right";
+            } else {
+              el.style.justifyContent = "flex-start";
+            }
+            const padL = evalNum(props.PaddingLeft, w, h, 0);
+            const padR = evalNum(props.PaddingRight, w, h, 0);
+            if (padL) el.style.paddingLeft = `${padL}px`;
+            if (padR) el.style.paddingRight = `${padR}px`;
+            el.style.whiteSpace = "pre-wrap";
+            if (ctrlType.includes("Button")) el.style.cursor = "pointer";
+
+            const txtSpan = document.createElement("span");
+            txtSpan.textContent = evalText(props.Text, itemCtx);
+            el.appendChild(txtSpan);
+          } else if (ctrlType.includes("HtmlViewer")) {
+            el.style.overflowY = "auto";
+            el.style.position = props.AutoHeight ? "relative" : "absolute";
+            el.innerHTML = evalText(props.HtmlText, itemCtx);
+          } else if (ctrlType.includes("Icon")) {
+            el.style.display = "flex";
+            el.style.alignItems = "center";
+            el.style.justifyContent = "center";
+            el.style.cursor = props.OnSelect ? "pointer" : "default";
+            const icColor = evalColor(props.Color, itemCtx, "#0086d0");
+            if (String(props.Icon || "").includes("HorizontalLine") || String(props.Icon || "").includes("VerticalLine")) {
+              el.style.background = icColor;
+            } else {
+              el.innerHTML = renderIconSvg(props.Icon, icColor);
+            }
+          } else if (ctrlType.includes("FluidGrid")) {
+            el.style.overflowY = "auto";
+            el.style.display = "flex";
+            el.style.flexDirection = "column";
+            el.style.gap = "8px";
+          } else if (ctrlType.includes("DataCard")) {
+            el.style.position = "relative";
+            el.style.height = "auto";
+          } else if (ctrlType.includes("GroupContainer") && variant.includes("AutoLayout")) {
+            el.style.display = "flex";
+            const isHoriz = String(props.LayoutDirection || "").includes("Horizontal");
+            el.style.flexDirection = isHoriz ? "row" : "column";
+            el.style.gap = `${evalNum(props.LayoutGap, w, h, 0)}px`;
+            el.style.paddingTop = `${evalNum(props.PaddingTop, w, h, 0)}px`;
+            el.style.paddingLeft = `${evalNum(props.PaddingLeft, w, h, 0)}px`;
+            el.style.paddingRight = `${evalNum(props.PaddingRight, w, h, 0)}px`;
+            el.style.paddingBottom = `${evalNum(props.PaddingBottom, w, h, 0)}px`;
+            if (String(props.LayoutOverflowY || "").includes("Scroll")) el.style.overflowY = "auto";
+          } else if (ctrlType.includes("Gallery")) {
+            el.style.overflowY = "auto";
+            const tplSize = evalNum(props.TemplateSize, w, h, 170);
+            const itemsExpr = String(props.Items || "");
+            let itemsData = [];
+            if (itemsExpr.includes("colHomeExamAlerts") || itemsExpr.includes("colHubCards")) {
+              itemsData = appState.spData.examAlerts || [];
+            } else {
+              itemsData = (appState.spData.notifications || []).filter(n => {
+                if (appState.locTabThongBao === "Tất cả") return true;
+                return (n.LoaiThongBao && n.LoaiThongBao.Value) === appState.locTabThongBao;
+              });
+            }
+            itemsData.forEach(rec => {
+              const rowContainer = document.createElement("div");
+              rowContainer.style.position = "relative";
+              rowContainer.style.width = `${w}px`;
+              rowContainer.style.height = `${tplSize}px`;
+              rowContainer.style.marginBottom = "6px";
+              renderNodeList(body.Children || [], rowContainer, w, tplSize, rec, false);
+              el.appendChild(rowContainer);
+            });
+          }
+
+          el.onclick = (e) => {
+            e.stopPropagation();
+            if (!isPlayMode && !isPublishedMode) {
+              selectControl(ctrlName, body);
+              return;
+            }
+            if (props.OnSelect) {
+              executePowerFx(props.OnSelect, itemCtx);
+            }
+          };
+
+          if (!ctrlType.includes("Gallery") && Array.isArray(body.Children)) {
+            const childAuto = ctrlType.includes("GroupContainer") && variant.includes("AutoLayout");
+            renderNodeList(body.Children, el, w, h, itemCtx, childAuto);
+          }
+
+          parentEl.appendChild(el);
+        });
+      }
+
+      renderNodeList(children, canvas, 640, 1136, null, false);
+    }
+
+    function togglePlayMode() {
+      isPlayMode = !isPlayMode;
+      document.body.classList.toggle("design-mode", !isPlayMode);
+      const btn = document.getElementById("btn-mode");
+      btn.textContent = isPlayMode ? "Chế độ: Chạy thử (Play Live)" : "Chế độ: Thiết kế (Inspect)";
+      btn.classList.toggle("active-mode", isPlayMode);
+    }
+
+    function enablePublishedView(enable) {
+      isPublishedMode = enable;
+      isPlayMode = enable;
+      document.body.classList.toggle("published-mode", enable);
+      document.body.classList.toggle("design-mode", !enable);
+      const btn = document.getElementById("btn-publish-toggle");
+      if (enable) {
+        document.getElementById("app-title-label").textContent = "SEAZEN HR - PUBLISHED APP PLAYER";
+        btn.textContent = "Quay lại Studio Code";
+        btn.className = "btn";
+      } else {
+        document.getElementById("app-title-label").textContent = "Power Apps Local Sandbox & Live SharePoint CRUD";
+        btn.textContent = "Xuất bản App (Publish)";
+        btn.className = "btn btn-primary";
+      }
+    }
+
+    async function publishAndRunStandalone() {
+      if (isPublishedMode) {
+        enablePublishedView(false);
+        return;
+      }
+      const res = await fetch("/api/publish", { method: "POST", body: "{}" });
+      const data = await res.json();
+      enablePublishedView(true);
+      showPaToast(`Đã xuất bản! Đã tạo file chạy độc lập: Chay_SeaZen_App_Published.bat`);
+    }
+
+    function setCanvasZoom(val) {
+      document.getElementById("canvas-wrapper").style.transform = `scale(${val})`;
+    }
+
+    function toggleVar(varName) {
+      appState[varName] = !appState[varName];
+      syncStateChips();
+      if (currentAst) renderCanvasFromAst(currentAst);
+    }
+
+    function cycleTab() {
+      const order = ["Tất cả", "Hệ thống", "Cá nhân"];
+      const nextIdx = (order.indexOf(appState.locTabThongBao) + 1) % order.length;
+      appState.locTabThongBao = order[nextIdx];
+      syncStateChips();
+      if (currentAst) renderCanvasFromAst(currentAst);
+    }
+
+    function syncStateChips() {
+      document.getElementById("val-popup").textContent = String(appState.locShowPopupNoti);
+      document.getElementById("chip-popup").classList.toggle("on", appState.locShowPopupNoti);
+      document.getElementById("val-detail").textContent = String(appState.varShowNotiDetail);
+      document.getElementById("chip-detail").classList.toggle("on", appState.varShowNotiDetail);
+      document.getElementById("val-tab").textContent = `"${appState.locTabThongBao}"`;
+    }
+
+    // Live SharePoint CRUD Modal Functions
+    async function loadSpListsForCrudModal() {
+      const res = await fetch("/api/sp/lists");
+      const data = await res.json();
+      const sel = document.getElementById("crud-list-select");
+      sel.innerHTML = "";
+      (data.lists || []).forEach(lst => {
+        const opt = document.createElement("option");
+        opt.value = lst.name;
+        opt.textContent = `${lst.name} (${lst.id.slice(0, 8)}...)`;
+        sel.appendChild(opt);
+      });
+    }
+
+    function openSpCrudModal() {
+      document.getElementById("sp-crud-modal").classList.add("open");
+      loadCrudListItems();
+    }
+
+    function closeSpCrudModal() {
+      document.getElementById("sp-crud-modal").classList.remove("open");
+    }
+
+    async function loadCrudListItems() {
+      const listName = document.getElementById("crud-list-select").value;
+      const statusEl = document.getElementById("crud-status-msg");
+      const tbody = document.getElementById("crud-table-body");
+      statusEl.textContent = `Đang tải dữ liệu từ '${listName}' qua OAuth2 Token...`;
+      const res = await fetch(`/api/sp/items?list=${encodeURIComponent(listName)}&top=30`);
+      const data = await res.json();
+      if (data.error) {
+        statusEl.textContent = `Lỗi: ${data.error}`;
+        return;
+      }
+      const items = data.items || [];
+      statusEl.textContent = `Đã tải ${items.length} bản ghi mới nhất từ SharePoint.`;
+      tbody.innerHTML = "";
+      items.forEach(item => {
+        const tr = document.createElement("tr");
+        const summaryFields = {};
+        Object.keys(item).forEach(k => {
+          if (!["ID", "Title", "Created", "Modified", "@odata.etag", "ContentType", "Attachments"].includes(k) && !k.startsWith("_")) {
+            summaryFields[k] = item[k];
+          }
+        });
+        const jsonPreview = JSON.stringify(summaryFields).slice(0, 180);
+        tr.innerHTML = `
+          <td><strong>#${item.ID}</strong></td>
+          <td>${item.Title || ""}</td>
+          <td style="font-family:monospace;font-size:11px;color:#cbd5e1;">${jsonPreview}</td>
+          <td>${item.Created || ""}</td>
+          <td>
+            <button class="btn" style="padding:3px 7px;font-size:11px;" onclick='fillCrudForm(${item.ID}, ${JSON.stringify(item.Title || "")}, ${JSON.stringify(summaryFields)})'>Sửa</button>
+            <button class="btn btn-danger" style="padding:3px 7px;font-size:11px;" onclick="deleteSpCrudItem(${item.ID})">Xóa</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function fillCrudForm(id, title, extraObj) {
+      document.getElementById("crud-input-id").value = String(id);
+      document.getElementById("crud-input-title").value = title || "";
+      document.getElementById("crud-input-extra").value = JSON.stringify(extraObj || {});
+    }
+
+    async function submitSpCrud(action) {
+      const listName = document.getElementById("crud-list-select").value;
+      const idVal = document.getElementById("crud-input-id").value.trim();
+      const titleVal = document.getElementById("crud-input-title").value.trim();
+      const extraRaw = document.getElementById("crud-input-extra").value.trim();
+      const statusEl = document.getElementById("crud-status-msg");
+
+      let fields = {};
+      if (extraRaw) {
+        try {
+          fields = JSON.parse(extraRaw);
+        } catch (e) {
+          fields = { NoiDung: extraRaw };
+        }
+      }
+      if (titleVal) fields.Title = titleVal;
+
+      statusEl.textContent = `Đang thực thi ${action.toUpperCase()} trên SharePoint...`;
+      const res = await fetch("/api/sp/crud", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: action,
+          list: listName,
+          id: idVal ? Number(idVal) : null,
+          fields: fields
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        statusEl.textContent = `Thành công (${action.toUpperCase()} ID #${data.id})!`;
+        await loadCrudListItems();
+        await refreshLiveSpData(true);
+      } else {
+        statusEl.textContent = `Lỗi: ${data.error}`;
+      }
+    }
+
+    async function deleteSpCrudItem(id) {
+      if (!confirm(`Bạn có chắc chắn muốn xóa bản ghi ID #${id} trên SharePoint Online?`)) return;
+      const listName = document.getElementById("crud-list-select").value;
+      const statusEl = document.getElementById("crud-status-msg");
+      statusEl.textContent = `Đang xóa ID #${id}...`;
+      const res = await fetch("/api/sp/crud", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", list: listName, id: id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        statusEl.textContent = `Đã xóa bản ghi ID #${id} thành công.`;
+        await loadCrudListItems();
+        await refreshLiveSpData(true);
+      } else {
+        statusEl.textContent = `Lỗi xóa: ${data.error}`;
+      }
+    }
+
+    // Template CRUD Screen using Power Fx Patch & Remove
+    function loadTemplateCrudApp() {
+      const tpl = `Screens:
+  QuanLy_ThongBao_CRUD:
+    Properties:
+      Fill: =RGBA(241, 245, 249, 1)
+    Children:
+      - HeaderBg:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(15, 23, 42, 1)
+            Width: =640
+            Height: =80
+      - HeaderTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =RGBA(255, 255, 255, 1)
+            FontWeight: =FontWeight.Bold
+            Size: =17
+            X: =24
+            Y: =20
+            Width: =590
+            Height: =40
+            Text: ="QUẢN TRỊ THÔNG BÁO SHAREPOINT (LIVE OAUTH2 CRUD)"
+      - FormCard:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =RGBA(255, 255, 255, 1)
+            RadiusTopLeft: =16
+            RadiusTopRight: =16
+            RadiusBottomLeft: =16
+            RadiusBottomRight: =16
+            X: =20
+            Y: =96
+            Width: =600
+            Height: =220
+          Children:
+            - LblFormHeader:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(15, 23, 42, 1)
+                  FontWeight: =FontWeight.Bold
+                  Size: =14
+                  X: =20
+                  Y: =12
+                  Width: =400
+                  Height: =26
+                  Text: ="Tạo thông báo mới lên SharePoint Online"
+            - TxtTitle:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  Default: ="THÔNG BÁO NỘI BỘ SEAZEN"
+                  HintText: ="Nhập tiêu đề thông báo..."
+                  Fill: =RGBA(248, 250, 252, 1)
+                  BorderColor: =RGBA(203, 213, 225, 1)
+                  BorderThickness: =1
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  X: =20
+                  Y: =46
+                  Width: =380
+                  Height: =42
+            - DrpLoai:
+                Control: Classic/Dropdown@2.3.1
+                Properties:
+                  Items: =["Hệ thống", "Cá nhân"]
+                  Fill: =RGBA(248, 250, 252, 1)
+                  BorderColor: =RGBA(203, 213, 225, 1)
+                  BorderThickness: =1
+                  X: =412
+                  Y: =46
+                  Width: =168
+                  Height: =42
+            - TxtNoiDung:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  Default: ="Nội dung thông báo gửi từ Local Power Apps Sandbox qua OAuth2 Token."
+                  HintText: ="Nhập nội dung..."
+                  Fill: =RGBA(248, 250, 252, 1)
+                  BorderColor: =RGBA(203, 213, 225, 1)
+                  BorderThickness: =1
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  X: =20
+                  Y: =100
+                  Width: =560
+                  Height: =48
+            - BtnCreateSP:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Fill: =RGBA(37, 99, 235, 1)
+                  Color: =RGBA(255, 255, 255, 1)
+                  FontWeight: =FontWeight.Bold
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  Size: =13
+                  X: =20
+                  Y: =162
+                  Width: =560
+                  Height: =42
+                  Text: ="Đăng Thông Báo Lên SharePoint (Patch Defaults)"
+                  OnSelect: |-
+                    =Patch('APP CHẤM CÔNG - THÔNG BÁO', Defaults('APP CHẤM CÔNG - THÔNG BÁO'), { Title: TxtTitle.Text, NoiDung: TxtNoiDung.Text, LoaiThongBao: DrpLoai.Selected.Value, NguoiNhan: "ALL", HienThiNoi: "Ẩn" })
+      - GalleryCRUD:
+          Control: Gallery@2.15.0
+          Properties:
+            Items: =colNotifications
+            TemplateSize: =125
+            X: =20
+            Y: =332
+            Width: =600
+            Height: =780
+          Children:
+            - RowCard:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Fill: =RGBA(255, 255, 255, 1)
+                  BorderColor: =RGBA(226, 232, 240, 1)
+                  BorderThickness: =1
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  X: =0
+                  Y: =0
+                  Width: =600
+                  Height: =115
+                  Text: =""
+            - RowId:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(37, 99, 235, 1)
+                  FontWeight: =FontWeight.Bold
+                  Size: =11
+                  X: =18
+                  Y: =10
+                  Width: =120
+                  Height: =22
+                  Text: ="#" & ThisItem.ID
+            - RowTitle:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(15, 23, 42, 1)
+                  FontWeight: =FontWeight.Bold
+                  Size: =14
+                  X: =18
+                  Y: =32
+                  Width: =440
+                  Height: =28
+                  Text: =ThisItem.Title
+            - RowDesc:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =RGBA(100, 116, 139, 1)
+                  Size: =12
+                  X: =18
+                  Y: =62
+                  Width: =440
+                  Height: =40
+                  Text: =PlainText(ThisItem.NoiDung)
+            - BtnDeleteRow:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Fill: =RGBA(225, 29, 72, 1)
+                  Color: =RGBA(255, 255, 255, 1)
+                  FontWeight: =FontWeight.Bold
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  Size: =12
+                  X: =475
+                  Y: =38
+                  Width: =105
+                  Height: =38
+                  Text: ="Xóa (Remove)"
+                  OnSelect: =Remove('APP CHẤM CÔNG - THÔNG BÁO', ThisItem)`;
+      if (!isPlayMode) togglePlayMode();
+      document.getElementById("yaml-editor").value = tpl;
+      parseAndRenderYaml();
+    }
+
+    async function copyYamlToClipboard() {
+      const yamlText = document.getElementById("yaml-editor").value;
+      await navigator.clipboard.writeText(yamlText);
+      showPaToast("Đã copy mã YAML vào Clipboard! Bạn có thể sang Power Apps Studio và bấm Ctrl + V.");
+    }
+
+    async function saveCurrentScreen() {
+      const yamlText = document.getElementById("yaml-editor").value;
+      const res = await fetch("/api/save-screen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: currentScreenName, yaml: yamlText })
+      });
+      const data = await res.json();
+      if (data.saved) {
+        showPaToast(`Đã lưu thành công vào ${data.path}!`);
+      } else {
+        showPaToast("Lỗi khi lưu: " + (data.error || "Không xác định"), "error");
+      }
+    }
+
+    initSandbox();
+  </script>
+</body>
+</html>

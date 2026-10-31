@@ -1,0 +1,1310 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  ThongBao_LichSu:
+    Properties:
+      Fill: =RGBA(237, 237, 237, 1)
+      LoadingSpinnerColor: =RGBA(255, 200, 61, 1)
+      OnVisible: |-
+        =UpdateContext({locTabThongBao: "Tất cả"});
+
+        // Khởi tạo và nạp dữ liệu cache lịch sử đã đọc
+        If(
+        IsEmpty(colDaDocHistory),
+        ClearCollect(colDaDocHistory, { ID: 0 });
+        Clear(colDaDocHistory);
+        LoadData(colDaDocHistory, "LocalNotiHistory", true)
+        );
+
+        // Tải thông báo 90 ngày gần nhất từ SharePoint (Vượt qua giới hạn 5000 dòng nhờ lọc Created delegable)
+        UpdateContext({ varNotiCutoffDate: DateAdd(Today(), -90, TimeUnit.Days) });
+        ClearCollect(
+        colRecentNotifications,
+        Sort(
+        Filter(
+        'APP CHẤM CÔNG - THÔNG BÁO',
+        Created >= varNotiCutoffDate
+        ),
+        Created,
+        SortOrder.Descending
+        )
+        );
+    Children:
+      - Rectangle12_1:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(166, 166, 166, 1)
+            Fill: =RGBA(255, 255, 255, 1)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(255, 200, 61, 1)
+            PressedFill: =RGBA(255, 200, 61, 1)
+            Width: =640
+            Y: =1036
+      - Rectangle5_40:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(166, 166, 166, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(255, 255, 255, 1)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(0, 0, 0, 0)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =640
+            Y: =1036
+      - Icon1_40:
+          Control: Classic/Icon@2.5.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(0, 134, 208, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(220, 220, 220, 1)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Height: =45
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.Home
+            OnSelect: =Navigate(Login)
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =45
+            X: =43
+            Y: =1049
+      - Label10_201:
+          Control: Label@2.5.1
+          Group: Group19_1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="TRANG CHỦ"
+            Width: =128
+            Y: =1095
+      - Label10_202:
+          Control: Label@2.5.1
+          Group: Group19_1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            Size: =10
+            Text: ="LỊCH TRỰC"
+            Width: =128
+            X: =128
+            Y: =1095
+      - Label10_203:
+          Control: Label@2.5.1
+          Group: Group19_1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            OnSelect: =Navigate(HoSo)
+            Size: =10
+            Text: ="HỒ SƠ"
+            Width: =128
+            X: =256
+            Y: =1095
+      - Label10_204:
+          Control: Label@2.5.1
+          Group: Group19_1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            OnSelect: =Navigate(DangKyPhanAnh_LichSu,ScreenTransition.Cover)
+            Size: =10
+            Text: ="PHẢN ÁNH"
+            Width: =128
+            X: =384
+            Y: =1095
+      - Label10_205:
+          Control: Label@2.5.1
+          Group: Group19_1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =24
+            OnSelect: =Navigate(ThongBao_LichSu,ScreenTransition.Cover)
+            Size: =10
+            Text: ="THÔNG BÁO"
+            Width: =128
+            X: =512
+            Y: =1095
+      - Icon10_40:
+          Control: Classic/Icon@2.5.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(0, 134, 208, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(220, 220, 220, 1)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Height: =45
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.CalendarBlank
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =45
+            X: =169
+            Y: =1050
+      - Icon11_41:
+          Control: Classic/Icon@2.5.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(0, 134, 208, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(220, 220, 220, 1)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Height: =45
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.Person
+            OnSelect: =Navigate(HoSo)
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =45
+            X: =297
+            Y: =1050
+      - Icon12_40:
+          Control: Classic/Icon@2.5.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(0, 134, 208, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(220, 220, 220, 1)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Height: =45
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.Document
+            OnSelect: =Navigate(DangKyPhanAnh_LichSu,ScreenTransition.Cover)
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =45
+            X: =425
+            Y: =1049
+      - Icon13_40:
+          Control: Classic/Icon@2.5.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(0, 134, 208, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(220, 220, 220, 1)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            Height: =45
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.Bell
+            OnSelect: =Navigate(ThongBao_LichSu,ScreenTransition.Cover)
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =45
+            X: =553
+            Y: =1049
+      - Rectangle6_186:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(224, 224, 224, 0.3)
+            OnSelect: =Navigate(CaTrucCaNhan)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            Width: =128
+            X: =128
+            Y: =1036
+      - Rectangle6_199:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(102, 102, 102, 0.07)
+            OnSelect: =Navigate(ThongBao_LichSu,ScreenTransition.Cover)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            Width: =128
+            X: =512
+            Y: =1036
+      - Rectangle6_200:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(224, 224, 224, 0.3)
+            OnSelect: =Navigate(DangKyPhanAnh_LichSu,ScreenTransition.Cover)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            Width: =128
+            X: =384
+            Y: =1036
+      - Rectangle6_201:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(224, 224, 224, 0.3)
+            OnSelect: =Navigate(HoSo)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            Width: =128
+            X: =256
+            Y: =1036
+      - Rectangle6_202:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(224, 224, 224, 0.3)
+            OnSelect: =Navigate(TrangChu)
+            PressedFill: =RGBA(255, 255, 255, 1)
+            Width: =128
+            X: =1
+            Y: =1036
+      - Active_2:
+          Control: Rectangle@2.3.0
+          Group: Group19_1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            DisabledFill: =RGBA(224, 224, 224, 0.4)
+            DisplayMode: =DisplayMode.View
+            Fill: =RGBA(224, 224, 224, 0.4)
+            FocusedBorderThickness: =4
+            HoverFill: =RGBA(224, 224, 224, 0.4)
+            PressedFill: =RGBA(224, 224, 224, 0.4)
+            Width: =128
+            X: =512
+            Y: =1036
+      - Button14_19:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(31, 31, 31, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledFill: =RGBA(255, 255, 255, 1)
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =RGBA(255, 255, 255, 1)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.'Segoe UI'
+            Height: =152
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(31, 31, 31, 1)
+            HoverFill: =
+            PressedBorderColor: =
+            PressedColor: =RGBA(31, 31, 31, 1)
+            PressedFill: =
+            RadiusBottomLeft: =45
+            RadiusBottomRight: =45
+            RadiusTopLeft: =45
+            RadiusTopRight: =45
+            Text: =
+            Width: =640
+      - RectQuickActionBar1_35:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(56, 0, 209, 1)
+            Height: =85
+            Width: =Parent.Width
+      - Label4_100:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(202, 202, 202, 1)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =61
+            HoverColor: =RGBA(202, 202, 202, 1)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            OnSelect: =Back()
+            PaddingLeft: =40
+            Text: ="LỊCH SỬ THÔNG BÁO"
+            Width: =598
+            Y: =10
+      - Icon14_33:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            BorderThickness: =1
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(220, 220, 220, 1)
+            DisabledFill: =RGBA(0, 0, 0, 0)
+            DisplayMode: =DisplayMode.View
+            FocusedBorderThickness: =0
+            Height: =20
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.ChevronLeft
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =29
+            Y: =30
+      - Gallery2_19:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Height: =773
+            Items: |-
+              =Filter(
+                  colRecentNotifications,
+                  (
+                      Coalesce(LoaiThongBao.Value, LoaiThongBao.Value) = "Hệ thống" Or 
+                      NguoiNhan = "ALL" Or 
+                      NguoiNhan = Text(_userRecord.MSNV.Value) Or 
+                      "," & Text(_userRecord.MSNV.Value) & "," in ("," & Substitute(Substitute(NguoiNhan, " ", ""), ";", ",") & ",")
+                  ),
+                  (
+                      locTabThongBao = "Tất cả" Or 
+                      Coalesce(LoaiThongBao.Value, LoaiThongBao.Value) = locTabThongBao
+                  ),
+                  (
+                      IsBlank(ThoiGianHienThi) Or 
+                      ThoiGianHienThi <= Now()
+                  ),
+                  (
+                      IsBlank(ThoiGianHetHan) Or 
+                      ThoiGianHetHan >= Now()
+                  )
+              )
+            TemplateSize: =210
+            Width: =606
+            X: =16
+            Y: =168
+          Children:
+            - Button24_30:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(31, 31, 31, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  DisabledFill: =RGBA(165, 165, 165, 1)
+                  DisplayMode: =DisplayMode.Disabled
+                  Fill: =RGBA(237, 237, 237, 1)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  Height: =199
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(31, 31, 31, 1)
+                  HoverFill: =ColorFade(RGBA(255, 200, 61, 1), 10%)
+                  OnSelect: =Select(Parent)
+                  PressedBorderColor: =ColorFade(RGBA(255, 200, 61, 1), 50%)
+                  PressedColor: =RGBA(31, 31, 31, 1)
+                  PressedFill: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+                  RadiusBottomLeft: =30
+                  RadiusBottomRight: =30
+                  RadiusTopLeft: =30
+                  RadiusTopRight: =30
+                  Text: =
+                  Width: =586
+                  X: =6
+                  Y: =8
+            - Button24_31:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(31, 31, 31, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  DisabledFill: =RGBA(255, 255, 255, 1)
+                  DisplayMode: =DisplayMode.Disabled
+                  Fill: =RGBA(255, 255, 255, 1)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  Height: =199
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(31, 31, 31, 1)
+                  HoverFill: =ColorFade(RGBA(255, 200, 61, 1), 10%)
+                  OnSelect: =Select(Parent)
+                  PressedBorderColor: =ColorFade(RGBA(255, 200, 61, 1), 50%)
+                  PressedColor: =RGBA(31, 31, 31, 1)
+                  PressedFill: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+                  RadiusBottomLeft: =30
+                  RadiusBottomRight: =30
+                  RadiusTopLeft: =30
+                  RadiusTopRight: =30
+                  Text: =
+                  Width: =586
+                  X: =6
+                  Y: =4
+            - Label15_101:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  BorderStyle: =BorderStyle.None
+                  Color: =RGBA(9, 33, 98, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  FocusedBorderThickness: =4
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =30
+                  OnSelect: =Select(Parent)
+                  PaddingLeft: =25
+                  PaddingRight: =25
+                  Size: =17
+                  Text: =PlainText(ThisItem.Title)
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =546
+                  Y: =9
+            - Label15_102:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  BorderStyle: =BorderStyle.None
+                  Color: =RGBA(9, 33, 98, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  FocusedBorderThickness: =4
+                  Font: =Font.'Segoe UI'
+                  Height: =103
+                  OnSelect: =Select(Parent)
+                  PaddingLeft: =25
+                  PaddingRight: =25
+                  Size: =15
+                  Text: =PlainText(ThisItem.NoiDung)
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =592
+                  Y: =69
+            - Label15_106:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  AutoHeight: =true
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  BorderStyle: =BorderStyle.None
+                  Color: =RGBA(9, 33, 98, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  DisplayMode: =DisplayMode.Disabled
+                  FocusedBorderThickness: =4
+                  Font: =Font.'Segoe UI'
+                  Height: =52
+                  OnSelect: =Select(Parent)
+                  PaddingLeft: =25
+                  PaddingRight: =25
+                  Size: =15
+                  Text: =ThisItem.Created
+                  Width: =592
+                  X: =3
+                  Y: =168
+            - Label15_126:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  BorderStyle: =BorderStyle.None
+                  Color: =RGBA(9, 33, 98, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  FocusedBorderThickness: =4
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =35
+                  OnSelect: =Select(Parent)
+                  PaddingLeft: =25
+                  PaddingRight: =25
+                  Size: =16
+                  Text: |-
+                    ="Loại đơn: " & ThisItem.LoaiDon.Value
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =546
+                  Y: =39
+            - RedDot:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(31, 31, 31, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  DisabledColor: =RGBA(140, 135, 135, 1)
+                  DisabledFill: =RGBA(189, 189, 189, 1)
+                  DisplayMode: =If(ThisItem.ID in colDaDocHistory.ID, DisplayMode.Disabled, DisplayMode.Edit)
+                  Fill: =RGBA(255, 51, 51, 1)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  Height: =10
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(31, 31, 31, 1)
+                  HoverFill: =ColorFade(RGBA(255, 200, 61, 1), 10%)
+                  OnSelect: =Select(Parent)
+                  PressedBorderColor: =ColorFade(RGBA(255, 200, 61, 1), 50%)
+                  PressedColor: =RGBA(31, 31, 31, 1)
+                  PressedFill: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+                  RadiusBottomLeft: =90
+                  RadiusBottomRight: =90
+                  RadiusTopLeft: =90
+                  RadiusTopRight: =90
+                  Text: =
+                  Width: =10
+                  X: =563
+                  Y: =22
+            - Button45:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(31, 31, 31, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  Fill: =RGBA(0, 0, 0, 0)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  Height: =199
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(31, 31, 31, 1)
+                  HoverFill: =RGBA(196, 196, 196, 0.22)
+                  OnSelect: "=// 1. ĐÁNH DẤU LÀ ĐÃ ĐỌC (Lưu vào bộ nhớ máy)\r\nIf(\r\n    Not(ThisItem.ID in colDaDocHistory.ID),\r\n    Collect(colDaDocHistory, { ID: ThisItem.ID });\r\n    SaveData(colDaDocHistory, \"LocalHistoryRead\")\r\n);\r\n\r\n// 2. XỬ LÝ HÀNH ĐỘNG DỰA VÀO CỘT LOẠI ĐƠN\r\nSwitch(\r\n    ThisItem.LoaiDon.Value,\r\n    \r\n    // Nếu là \"Khác\" -> Đứng im tại màn hình và bật Popup chi tiết\r\n    \"Khác\", \r\n    UpdateContext({ \r\n        varShowNotiDetail: true,     \r\n        varSelectedNoti: ThisItem    \r\n    }),\r\n    \r\n    // Nếu là các loại đơn khác -> Bay sang màn hình tương ứng\r\n    \"Nghỉ phép\", Navigate(DangKyNghiPhep_LichSu, ScreenTransition.Fade),\r\n    \"Nghỉ việc\", Navigate(DangKyNghiViec_LichSu, ScreenTransition.Fade),\r\n    \"Tăng ca\", Navigate(DangKyTangCa_LichSu, ScreenTransition.Fade),\r\n    \"Công tác\", Navigate(DangKyCongTac_LichSu, ScreenTransition.Fade),\r\n    \"Vào trễ/ra sớm\", Navigate(DangKyVaoTreRaSom_LichSu, ScreenTransition.Fade),\r\n    \"Điểm danh bổ sung\", Navigate(DangKyBoSungDiemDanh_LichSu, ScreenTransition.Fade),\r\n    \"Phản ánh\", Navigate(DangKyPhanAnh_LichSu, ScreenTransition.Fade)\r\n)"
+                  PressedBorderColor: =RGBA(9, 33, 98, 1)
+                  PressedColor: =RGBA(31, 31, 31, 1)
+                  PressedFill: =RGBA(0, 0, 0, 0)
+                  RadiusBottomLeft: =30
+                  RadiusBottomRight: =30
+                  RadiusTopLeft: =30
+                  RadiusTopRight: =30
+                  Text: =
+                  Width: =586
+                  X: =6
+                  Y: =4
+      - Button18_68:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(9, 33, 98, 1)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.Arial
+            FontWeight: =FontWeight.Bold
+            Height: =61
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(210, 210, 210, 1)
+            HoverFill: =RGBA(9, 33, 98, 1)
+            OnSelect: |-
+              =// Gom tất cả ID của các thông báo đang hiện trong Gallery đẩy hết vào Cache
+              Collect(
+                  colDaDocHistory,
+                  ForAll(
+                      Filter(Gallery2_19.AllItems, Not(ID in colDaDocHistory.ID)),
+                      { ID: ThisRecord.ID }
+                  )
+              );
+
+              // Lưu vào bộ nhớ máy
+              SaveData(colDaDocHistory, "LocalHistoryRead");
+
+              // Tuỳ chọn: Hiện thông báo nhỏ
+              Notify("Đã đánh dấu đọc tất cả!", NotificationType.Success);
+            PressedBorderColor: =
+            PressedColor: =RGBA(165, 165, 165, 1)
+            PressedFill: =RGBA(9, 33, 98, 1)
+            RadiusBottomLeft: =30
+            RadiusBottomRight: =30
+            RadiusTopLeft: =30
+            RadiusTopRight: =30
+            Size: =18
+            Text: ="Đánh dấu đã đọc"
+            Width: =292
+            X: =16
+            Y: =957
+      - Button17_55:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =If(locTabThongBao = "Tất cả", RGBA(9, 33, 98, 1), RGBA(166, 166, 166, 1))
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =67
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(31, 31, 31, 1)
+            HoverFill: =
+            OnSelect: |-
+              =UpdateContext({locTabThongBao: "Tất cả"})
+            PressedBorderColor: =
+            PressedColor: =RGBA(9, 33, 98, 1)
+            PressedFill: =
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =18
+            Text: ="Tất cả"
+            Width: =213
+            X: =1
+            Y: =85
+      - Button17_56:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            BorderThickness: =0
+            Color: =If(locTabThongBao = "Hệ thống", RGBA(9, 33, 98, 1), RGBA(166, 166, 166, 1))
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =67
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(31, 31, 31, 1)
+            HoverFill: =
+            OnSelect: |-
+              =UpdateContext({locTabThongBao: "Hệ thống"})
+            PressedBorderColor: =
+            PressedColor: =RGBA(9, 33, 98, 1)
+            PressedFill: =
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =18
+            Text: ="Hệ thống"
+            Width: =214
+            X: =211
+            Y: =85
+      - Button17_57:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =If(locTabThongBao = "Cá nhân", RGBA(9, 33, 98, 1), RGBA(166, 166, 166, 1))
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            Fill: =RGBA(0, 0, 0, 0)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =67
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(31, 31, 31, 1)
+            HoverFill: =
+            OnSelect: |-
+              =UpdateContext({locTabThongBao: "Cá nhân"})
+            PressedBorderColor: =
+            PressedColor: =RGBA(9, 33, 98, 1)
+            PressedFill: =
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =18
+            Text: ="Cá nhân"
+            Width: =213
+            X: =427
+            Y: =85
+      - Icon18_58:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(121, 121, 121, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(121, 121, 121, 1)
+            DisabledFill: =RGBA(121, 121, 121, 1)
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =RGBA(121, 121, 121, 1)
+            FocusedBorderThickness: =4
+            Height: =60
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.VerticalLine
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =1
+            X: =211
+            Y: =88
+      - Icon18_59:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(121, 121, 121, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(121, 121, 121, 1)
+            DisabledFill: =RGBA(121, 121, 121, 1)
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =RGBA(121, 121, 121, 1)
+            FocusedBorderThickness: =4
+            Height: =60
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.VerticalLine
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Width: =1
+            X: =426
+            Y: =88
+      - 60Cn:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(9, 33, 98, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(9, 33, 98, 1)
+            DisabledFill: =RGBA(9, 33, 98, 1)
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =RGBA(9, 33, 98, 1)
+            FocusedBorderThickness: =4
+            Height: =5
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.HorizontalLine
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Visible: =locTabThongBao = "Cá nhân"
+            Width: =100
+            X: =484
+            Y: =148
+      - 61Ht:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(9, 33, 98, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(9, 33, 98, 1)
+            DisabledFill: =RGBA(9, 33, 98, 1)
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =RGBA(9, 33, 98, 1)
+            FocusedBorderThickness: =4
+            Height: =5
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.HorizontalLine
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Visible: =locTabThongBao = "Hệ thống"
+            Width: =100
+            X: =267
+            Y: =148
+      - 62Tc:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(109, 109, 109, 1)
+            Color: =RGBA(9, 33, 98, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(9, 33, 98, 1)
+            DisabledFill: =RGBA(9, 33, 98, 1)
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =RGBA(9, 33, 98, 1)
+            FocusedBorderThickness: =4
+            Height: =5
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            HoverFill: =RGBA(0, 0, 0, 0)
+            Icon: =Icon.HorizontalLine
+            PressedBorderColor: =RGBA(0, 0, 0, 0)
+            PressedColor: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Visible: =locTabThongBao = "Tất cả"
+            Width: =100
+            X: =57
+            Y: =148
+      - Button46:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(31, 31, 31, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(255, 255, 255, 1)
+            DisabledFill: =RGBA(255, 51, 51, 1)
+            DisplayMode: =DisplayMode.Disabled
+            Fill: =RGBA(255, 200, 61, 1)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.'Segoe UI'
+            Height: =38
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(31, 31, 31, 1)
+            HoverFill: =ColorFade(RGBA(255, 200, 61, 1), 10%)
+            PressedBorderColor: =ColorFade(RGBA(255, 200, 61, 1), 50%)
+            PressedColor: =RGBA(31, 31, 31, 1)
+            PressedFill: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+            RadiusBottomLeft: =90
+            RadiusBottomRight: =90
+            RadiusTopLeft: =90
+            RadiusTopRight: =90
+            Size: =17
+            Text: |-
+              =CountRows(
+                  Filter(
+                      Gallery2_19.AllItems,
+                      Not(ID in colDaDocHistory.ID)
+                  )
+              )
+            Width: =38
+            X: =187
+            Y: =71
+      - Button18_69:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(255, 255, 255, 1)
+            DisabledFill: =RGBA(212, 212, 212, 1)
+            DisplayMode: |-
+              =If(
+                  "Tạo thông báo" in _userRecord.AdminRoles.Value, 
+                  DisplayMode.Edit, 
+                  DisplayMode.Disabled
+              )
+            Fill: =RGBA(127, 178, 57, 1)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.Arial
+            FontWeight: =FontWeight.Bold
+            Height: =61
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(255, 255, 255, 1)
+            HoverFill: =RGBA(99, 139, 44, 1)
+            OnSelect: =Navigate(ThongBao_DangKyMoi)
+            PressedBorderColor: =
+            PressedColor: =RGBA(255, 255, 255, 1)
+            PressedFill: =RGBA(141, 198, 63, 1)
+            RadiusBottomLeft: =30
+            RadiusBottomRight: =30
+            RadiusTopLeft: =30
+            RadiusTopRight: =30
+            Size: =18
+            Text: ="Đăng thông báo"
+            Width: =292
+            X: =330
+            Y: =958
+      - CloseNotiBgr_3:
+          Control: Classic/Button@2.2.0
+          Group: NotiPopupGroup_2
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledFill: =RGBA(15, 23, 42, 0.45)
+            Fill: =RGBA(15, 23, 42, 0.45)
+            FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+            Font: =Font.'Segoe UI'
+            Height: =1136
+            HoverBorderColor: =RGBA(0, 0, 0, 0)
+            HoverColor: =RGBA(31, 31, 31, 1)
+            HoverFill: =RGBA(15, 23, 42, 0.55)
+            OnSelect: |-
+              =UpdateContext({ varShowNotiDetail: false })
+            PaddingBottom: =8
+            PaddingTop: =
+            PressedBorderColor: =
+            PressedColor: =RGBA(31, 31, 31, 1)
+            PressedFill: =RGBA(15, 23, 42, 0.6)
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =
+            Text: =
+            Visible: =varShowNotiDetail
+            Width: =640
+      - PopupNoti_2:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Group: NotiPopupGroup_2
+          Properties:
+            DropShadow: =DropShadow.None
+            Height: =914
+            RadiusBottomLeft: =20
+            RadiusBottomRight: =20
+            RadiusTopLeft: =20
+            RadiusTopRight: =20
+            Visible: =varShowNotiDetail
+            Width: =640
+            Y: =130
+          Children:
+            - CardStack_Layer3_1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(255, 255, 255, 0)
+                  BorderThickness: =0
+                  DisabledBorderColor: =RGBA(255, 255, 255, 0)
+                  DisabledFill: =RGBA(255, 255, 255, 0.45)
+                  DisplayMode: =DisplayMode.Disabled
+                  Fill: =RGBA(255, 255, 255, 0.45)
+                  Height: =680
+                  RadiusBottomLeft: =36
+                  RadiusBottomRight: =36
+                  RadiusTopLeft: =36
+                  RadiusTopRight: =36
+                  Text: =""
+                  Width: =460
+                  X: =90
+                  Y: =176
+            - CardStack_Layer2_1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(255, 255, 255, 0)
+                  BorderThickness: =0
+                  DisabledBorderColor: =RGBA(255, 255, 255, 0)
+                  DisabledFill: =RGBA(255, 255, 255, 0.75)
+                  DisplayMode: =DisplayMode.Disabled
+                  Fill: =RGBA(255, 255, 255, 0.75)
+                  Height: =680
+                  RadiusBottomLeft: =36
+                  RadiusBottomRight: =36
+                  RadiusTopLeft: =36
+                  RadiusTopRight: =36
+                  Text: =""
+                  Width: =546
+                  X: =43
+                  Y: =163
+            - Button25_3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(241, 245, 249, 1)
+                  BorderThickness: =1
+                  Color: =RGBA(31, 31, 31, 1)
+                  DisabledBorderColor: =RGBA(241, 245, 249, 1)
+                  DisabledColor: =RGBA(255, 255, 255, 1)
+                  DisabledFill: =RGBA(255, 255, 255, 1)
+                  DisplayMode: =DisplayMode.Disabled
+                  Fill: =RGBA(255, 255, 255, 1)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  Height: =795
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(31, 31, 31, 1)
+                  HoverFill: =RGBA(255, 255, 255, 1)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedColor: =RGBA(31, 31, 31, 1)
+                  PressedFill: =RGBA(255, 255, 255, 1)
+                  RadiusBottomLeft: =36
+                  RadiusBottomRight: =36
+                  RadiusTopLeft: =36
+                  RadiusTopRight: =36
+                  Text: =""
+                  Width: =593
+                  X: =24
+                  Y: =36
+            - CloseNoti_2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(148, 163, 184, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  Fill: =RGBA(241, 245, 249, 1)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =32
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(239, 68, 68, 1)
+                  HoverFill: =RGBA(254, 226, 226, 1)
+                  OnSelect: |-
+                    =UpdateContext({ varShowNotiDetail: false })
+                  PaddingBottom: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedColor: =RGBA(239, 68, 68, 1)
+                  PressedFill: =RGBA(254, 202, 202, 1)
+                  RadiusBottomLeft: =90
+                  RadiusBottomRight: =90
+                  RadiusTopLeft: =90
+                  RadiusTopRight: =90
+                  Size: =14
+                  Text: ="✕"
+                  Width: =32
+                  X: =568
+                  Y: =56
+            - LblMetadata_Popup_1:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(148, 163, 184, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  Size: =13
+                  Text: =Text(Gallery2_19.Selected.Created, "dd/mm/yyyy hh:mm") & "  •  " & Coalesce(Gallery2_19.Selected.LoaiDon.Value, Gallery2_19.Selected.LoaiThongBao.Value, "Hệ thống")
+                  Width: =480
+                  X: =80
+                  Y: =56
+            - CanvasB4_16:
+                Control: FluidGrid@2.3.0
+                Properties:
+                  BorderThickness: =0
+                  Height: =664
+                  Width: =568
+                  X: =43
+                  Y: =88
+                Children:
+                  - DataCard10_6:
+                      Control: DataCard@1.0.2
+                      Variant: BlankCard
+                      Properties:
+                        Height: =0
+                        Width: =568
+                        X: =0
+                        Y: =0
+                      Children:
+                        - HtmlText2_3:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              AutoHeight: =true
+                              Font: =Font.'Segoe UI'
+                              HtmlText: |-
+                                ="<div style='font-size: 18px; font-weight: 800; color: #1e293b; line-height: 1.35; font-family: Segoe UI, sans-serif;'>" & 
+                                Coalesce(Gallery2_19.Selected.Title, Gallery2_19.Selected.Title, "Thông báo") & 
+                                "</div>"
+                              Width: =555
+                  - DataCard16_6:
+                      Control: DataCard@1.0.2
+                      Variant: BlankCard
+                      Properties:
+                        Height: =0
+                        Width: =568
+                        X: =0
+                        Y: =1
+                      Children:
+                        - HtmlText1_3:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              AutoHeight: =true
+                              Font: =Font.'Segoe UI'
+                              Height: =340
+                              HtmlText: |-
+                                =If(
+                                    Gallery2_19.Selected.KieuThongBao.Value = "Thông báo HTML",
+                                    Gallery2_19.Selected.NoiDung, 
+                                    "<div style='font-size: 14px; color: #334155; line-height: 1.6; font-family: Segoe UI, sans-serif;'>" & 
+                                    Substitute(Gallery2_19.Selected.NoiDung, Char(10), "<br/>") & 
+                                    "</div>"
+                                )
+                              Size: =14
+                              Width: =555
+                  - DataCard18_1:
+                      Control: DataCard@1.0.2
+                      Variant: BlankCard
+                      Properties:
+                        Height: =0
+                        Width: =568
+                        X: =0
+                        Y: =2
+                      Children:
+                        - Image6_3:
+                            Control: Image@2.2.3
+                            Properties:
+                              BorderColor: =RGBA(226, 232, 240, 1)
+                              BorderThickness: =1
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledFill: =RGBA(0, 0, 0, 0)
+                              FocusedBorderThickness: =0
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverFill: =RGBA(0, 0, 0, 0)
+                              Image: =Gallery2_19.Selected.HinhAnhThongBao.Full
+                              OnSelect: |-
+                                =UpdateContext({ locBungAnh: true, locAnhDuocChon: Self.Image })
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0)
+                              RadiusBottomLeft: =16
+                              RadiusBottomRight: =16
+                              RadiusTopLeft: =16
+                              RadiusTopRight: =16
+                              Visible: =!IsBlank(Self.Image)
+                              Width: =555
+            - IconSender_Popup_1:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(9, 33, 98, 1)
+                  Height: =36
+                  Icon: =Icon.Person
+                  Width: =36
+                  X: =62
+                  Y: =764
+            - LblSenderInfo_Popup_1:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(30, 41, 59, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =38
+                  Size: =10
+                  Text: =Coalesce(Gallery2_19.Selected.'Created By'.DisplayName, "Phòng Nhân Sự") & Char(10) & "Bộ phận quản lý thông báo SEAZEN"
+                  Width: =280
+                  X: =106
+                  Y: =763
+            - ViewAll_3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  Fill: =RGBA(15, 23, 42, 1)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =40
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(255, 255, 255, 1)
+                  HoverFill: =RGBA(30, 41, 59, 1)
+                  OnSelect: |-
+                    =UpdateContext({ varShowNotiDetail: false })
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedColor: =RGBA(255, 255, 255, 1)
+                  PressedFill: =RGBA(2, 6, 23, 1)
+                  RadiusBottomLeft: =20
+                  RadiusBottomRight: =20
+                  RadiusTopLeft: =20
+                  RadiusTopRight: =20
+                  Size: =13
+                  Text: ="Đóng"
+                  Width: =160
+                  X: =395
+                  Y: =763
+      - Container5_2:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =RGBA(41, 41, 41, 1)
+            Height: =1136
+            Visible: =locBungAnh
+            Width: =640
+          Children:
+            - Image7_2:
+                Control: Image@2.2.3
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  BorderStyle: =BorderStyle.None
+                  BorderThickness: =2
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  DisabledFill: =RGBA(0, 0, 0, 0)
+                  FocusedBorderThickness: =4
+                  Height: =1136
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =RGBA(0, 0, 0, 0)
+                  Image: =locAnhDuocChon
+                  OnSelect: |-
+                    =UpdateContext({ locBungAnh: false })
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedFill: =RGBA(0, 0, 0, 0)
+                  Visible: =locBungAnh
+                  Width: =640
+            - CloseNotiImg_2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  Fill: =RGBA(255, 51, 51, 0.88)
+                  FocusedBorderColor: =ColorFade(Self.Fill, 75%)
+                  Font: =Font.'Segoe UI'
+                  Height: =62
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(31, 31, 31, 1)
+                  HoverFill: =ColorFade(RGBA(255, 200, 61, 1), 10%)
+                  OnSelect: |-
+                    =UpdateContext({ locBungAnh: false })
+                  PaddingBottom: =8
+                  PaddingTop: =
+                  PressedBorderColor: =ColorFade(RGBA(255, 200, 61, 1), 50%)
+                  PressedColor: =RGBA(31, 31, 31, 1)
+                  PressedFill: =ColorFade(RGBA(255, 200, 61, 1), 30%)
+                  RadiusBottomLeft: =90
+                  RadiusBottomRight: =90
+                  RadiusTopLeft: =90
+                  RadiusTopRight: =90
+                  Size: =25
+                  Text: ="x"
+                  Width: =62
+                  X: =561
+                  Y: =27
